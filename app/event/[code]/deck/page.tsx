@@ -66,9 +66,9 @@ export default function Deck() {
         </div>
       </header>
 
-      <section className="relative flex-1 px-5 py-4">
+      <section className="flex flex-1 min-h-0 flex-col overflow-hidden px-5 py-4">
         {!person ? <EmptyDeck onRefresh={() => { setI(0); load(); }} /> : (
-          <div className="relative h-full">
+          <div className="relative flex-1 min-h-0">
             {people[i + 1] && (
               <div className="absolute inset-0 scale-95 opacity-60"><ProfileCard p={people[i + 1]} /></div>
             )}
@@ -105,10 +105,10 @@ function Splash() { return <main className="flex min-h-[100dvh] items-center jus
 
 function MatchModal({ p, onChat, onClose }: { p: DeckPerson; onChat: () => void; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur flex items-center justify-center px-8">
-      <div className="animate-pop text-center">
+    <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur flex items-center justify-center px-6">
+      <div className="animate-pop text-center w-full max-w-xs">
         <div className="text-sm font-black uppercase tracking-widest text-glow">Deu match na casa</div>
-        <h2 className="mt-2 text-4xl font-black">Você e {p.display_name}<br />se curtiram 🔥</h2>
+        <h2 className="mt-2 text-3xl font-black break-words">Você e {p.display_name} se curtiram 🔥</h2>
         <img src={p.photo_url} alt="" className="mx-auto mt-6 h-28 w-28 rounded-full object-cover border-4 border-glow shadow-neon" />
         <button onClick={onChat} className="btn mt-8 w-full bg-glow py-4 text-white text-lg shadow-neon">Ver meus matches</button>
         <button onClick={onClose} className="btn mt-2 w-full py-3 text-muted">Continuar</button>

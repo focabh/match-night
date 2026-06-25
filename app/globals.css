@@ -12,6 +12,7 @@ body {
   color: #fff;
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 /* limita a experiência a uma coluna mobile-first mesmo no desktop */
 .shell { max-width: 480px; margin: 0 auto; min-height: 100dvh; position: relative; }
