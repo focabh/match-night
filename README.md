@@ -53,6 +53,21 @@ admin é por chave única (hardenar com login real depois).
 ## 🍸 Como rodar um teste real em bar
 Passo a passo pra um teste controlado (10–20 pessoas). App: **https://match-night-bh.vercel.app**
 
+**Checklist (o que você vai validar):**
+1. [ ] Entrar no admin com a chave → §1
+2. [ ] Criar evento real → §1
+3. [ ] Pegar QR Code / link → §2
+4. [ ] Testar como usuário → §3 (ou sandbox `/join/demo`)
+5. [ ] Encerrar manualmente → §4
+6. [ ] Rodar "Expirar vencidos" → §4
+7. [ ] Confirmar que QR antigo, deck, matches e bypass por URL ficam mortos → §5
+
+> **Sandboxes prontos pra treinar sem juntar gente:**
+> `/join/demo` = evento de teste com pessoas fake + match automático (curtiu = deu
+> match), pra você sentir a experiência do usuário sozinho.
+> `/join/ended` = evento já encerrado, pra ver na hora a tela "evento terminou".
+> O **seu** evento real você cria no `/admin` (esses sandboxes não interferem nele).
+
 ### 1. Criar o evento (admin / bar)
 1. Abra **`/admin`** → entre com a chave admin (`mn_config.admin_key`, default `mn-admin-2026`).
 2. **+ Novo evento** → nome (ex.: "Sexta Solteira"), bar/local, descrição, **duração**
