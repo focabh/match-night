@@ -11,6 +11,8 @@ export default function Join() {
   const router = useRouter();
   const [ev, setEv] = useState<EventPublic | null | undefined>(undefined);
   const [confirmed, setConfirmed] = useState(false);
+  const [needConsent, setNeedConsent] = useState(false);
+  const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -22,12 +24,16 @@ export default function Join() {
   if (ev.ended || !ev.is_live) return <EventEnded name={ev.name} />;
 
   async function enter() {
-    setBusy(true);
+    if (!confirmed) { setNeedConsent(true); return; }   // feedback em vez de "nada"
+    setBusy(true); setErr('');
     try {
       const part = await api.myParticipation(ev!.event_id, getUserId());
       if (part && part.status === 'active') router.push(`/event/${code}/deck`);
       else router.push(`/event/${code}/register`);
-    } finally { setBusy(false); }
+    } catch (e: any) {
+      setErr('Não rolou entrar agora. Tenta de novo.');
+      setBusy(false);
+    }
   }
 
   return (
@@ -51,18 +57,26 @@ export default function Join() {
           matches e conversas <b className="text-white">deixam de ficar disponíveis</b>.
         </div>
 
-        <label className="mt-6 flex items-start gap-3 cursor-pointer">
-          <input type="checkbox" className="mt-1 h-5 w-5 accent-glow" checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)} />
+        <button type="button"
+          onClick={() => { setConfirmed((v) => !v); setNeedConsent(false); }}
+          className={`mt-6 w-full flex items-start gap-3 text-left rounded-2xl border p-4 transition ${
+            confirmed ? 'bg-glow/15 border-glow'
+            : needConsent ? 'border-amber bg-amber/10' : 'bg-card border-line'}`}>
+          <span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-md border-2 text-sm font-black ${
+            confirmed ? 'bg-glow border-glow text-white' : 'border-muted text-transparent'}`}>✓</span>
           <span className="text-sm text-white/90">
             Confirmo que tenho <b>18 anos ou mais</b> e aceito as regras do evento e a
             política de privacidade (dados temporários, expiram com o evento).
           </span>
-        </label>
+        </button>
+        {needConsent && !confirmed && (
+          <p className="mt-2 text-sm font-bold text-amber">👆 Toque aqui pra confirmar que você tem 18+ e entrar.</p>
+        )}
+        {err && <p className="mt-2 text-sm font-bold text-glow">{err}</p>}
       </div>
 
-      <button disabled={!confirmed || busy} onClick={enter}
-        className="btn w-full bg-glow py-4 text-white text-lg shadow-neon">
+      <button disabled={busy} onClick={enter}
+        className={`btn w-full py-4 text-white text-lg shadow-neon ${confirmed ? 'bg-glow' : 'bg-glow/60'}`}>
         {busy ? 'Entrando…' : 'Entrar na noite'}
       </button>
     </main>
