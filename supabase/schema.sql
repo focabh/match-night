@@ -24,6 +24,7 @@ create table if not exists public.mn_events (
   starts_at timestamptz not null,
   ends_at timestamptz not null,
   status text not null default 'draft' check (status in ('draft','active','ended','cancelled')),
+  is_demo boolean not null default false,   -- sandbox de QA (não aparece no admin/bar)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -132,7 +133,7 @@ create or replace function public.mn_event_public(p_code text)
   select case when e.id is null then null else json_build_object(
     'event_id', e.id, 'name', e.name, 'venue_name', e.venue_name,
     'description', e.description, 'starts_at', e.starts_at, 'ends_at', e.ends_at,
-    'status', e.status, 'is_live', public.mn_is_live(e),
+    'status', e.status, 'is_live', public.mn_is_live(e), 'is_demo', e.is_demo,
     'ended', (e.status in ('ended','cancelled') or now() >= e.ends_at)
   ) end
   from (select * from public.mn_events where public_code = p_code limit 1) e
@@ -367,7 +368,9 @@ begin
   select e.id, e.name, e.venue_name, e.public_code, e.status, e.starts_at, e.ends_at,
     (select count(*)::int from public.mn_participants p where p.event_id=e.id),
     (select count(*)::int from public.mn_matches m where m.event_id=e.id and m.status='active')
-  from public.mn_events e order by e.created_at desc;
+  from public.mn_events e
+  where not coalesce(e.is_demo, false)   -- sandboxes de QA fora do painel do bar
+  order by e.created_at desc;
 end $$;
 
 create or replace function public.mn_admin_end_event(p_key text, p_event_id uuid)

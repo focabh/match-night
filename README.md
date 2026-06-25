@@ -123,6 +123,11 @@ match só com reciprocidade no mesmo evento; ao encerrar/expirar, `mn_expire_eve
 marca evento/participantes/matches como `ended/expired` → deck, swipe, matches e join
 ficam bloqueados.
 
+## Isolamento (evento real × sandboxes) — TESTADO
+Evento criado no `/admin` não mistura com `/join/demo`/`/join/ended` nem com dados
+fake: deck/QR/stats são por `event_id`; o autolike de demo só age em `is_demo=true`;
+o painel do admin esconde os sandboxes. Cenários: [`docs/ISOLATION-TEST.md`](docs/ISOLATION-TEST.md).
+
 ## Expiração total (regra crítica) — TESTADA
 "Acabou o evento, acabou tudo": encerrar manual / passar do horário bloqueia deck,
 like, match, matches e participação; QR antigo só mostra "evento terminou" (até via

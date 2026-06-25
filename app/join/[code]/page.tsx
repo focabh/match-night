@@ -33,6 +33,11 @@ export default function Join() {
   return (
     <main className="px-6 pt-16 pb-10 flex flex-col min-h-[100dvh]">
       <div className="flex-1">
+        {ev.is_demo && (
+          <div className="mb-3 rounded-xl bg-amber/15 border border-amber/40 px-3 py-2 text-xs font-bold text-amber">
+            🧪 SANDBOX DE QA — evento de teste com perfis fake. Não é um evento real.
+          </div>
+        )}
         <div className="inline-flex items-center gap-2 rounded-full bg-glow/15 border border-glow/40 px-3 py-1 text-xs font-bold text-glow">
           <span className="h-2 w-2 rounded-full bg-glow animate-pulse" /> AO VIVO NESTE EVENTO
         </div>

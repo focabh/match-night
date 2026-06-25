@@ -7,6 +7,7 @@ export type EventPublic = {
   ends_at: string;
   status: 'draft' | 'active' | 'ended' | 'cancelled';
   is_live: boolean;
+  is_demo: boolean;
   ended: boolean;
 };
 
