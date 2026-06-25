@@ -61,8 +61,14 @@ match só com reciprocidade no mesmo evento; ao encerrar/expirar, `mn_expire_eve
 marca evento/participantes/matches como `ended/expired` → deck, swipe, matches e join
 ficam bloqueados.
 
+## Expiração total (regra crítica) — TESTADA
+"Acabou o evento, acabou tudo": encerrar manual / passar do horário bloqueia deck,
+like, match, matches e participação; QR antigo só mostra "evento terminou" (até via
+bypass de URL). Cenários + resultados: [`docs/EXPIRATION-TEST.md`](docs/EXPIRATION-TEST.md).
+
 ## Limitações conhecidas (MVP) / próximos passos
-- **Foto** por URL + "foto de teste" (upload real via Supabase Storage = próximo passo).
+- **Foto:** upload real via **Supabase Storage** (bucket público `mn-photos`,
+  `supabase/storage.sql`); "foto de teste" segue como atalho de QA.
 - **Chat** fora do MVP (V2): por ora, revela Instagram nos matches.
 - **Auth** anônima por `localStorage` (uuid passado às RPCs) — suficiente pro bar;
   endurecer com Supabase Anonymous Auth (JWT → RLS por `auth.uid()`) depois.

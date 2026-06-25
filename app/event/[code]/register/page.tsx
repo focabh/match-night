@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { supabase } from '@/lib/supabaseClient';
 import { getUserId, loadProfile, saveProfile } from '@/lib/session';
 import { GENDERS, INTERESTS, INTENTIONS, PROMPTS, type EventPublic, type ProfileInput } from '@/lib/types';
 import { EventEnded } from '@/components/States';
@@ -128,19 +129,46 @@ function Picker({ label, opts, value, onPick }: { label: string; opts: { v: stri
   );
 }
 
-// MVP: foto por URL + "foto de teste". Upload real é o próximo passo.
+// Upload REAL pro Supabase Storage (bucket mn-photos, público).
 function Photo({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [up, setUp] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setErr('');
+    if (file.size > 5_242_880) { setErr('Foto até 5MB.'); return; }
+    setUp(true);
+    try {
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${getUserId()}/${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('mn-photos').upload(path, file, { upsert: true, contentType: file.type });
+      if (error) throw error;
+      const { data } = supabase.storage.from('mn-photos').getPublicUrl(path);
+      onChange(data.publicUrl);
+    } catch {
+      setErr('Não rolou enviar a foto. Tente outra.');
+    } finally { setUp(false); }
+  }
+
   return (
     <div>
-      <label className="label">Foto principal *</label>
-      <div className="flex items-center gap-3">
-        <div className="h-20 w-20 shrink-0 rounded-2xl bg-card border border-line overflow-hidden grid place-items-center">
-          {value ? <img src={value} alt="" className="h-full w-full object-cover" /> : <span className="text-2xl">📷</span>}
-        </div>
-        <div className="flex-1 space-y-2">
-          <input className="input" placeholder="Cole a URL da sua foto" value={value} onChange={(e) => onChange(e.target.value)} />
+      <label className="label">Sua foto *</label>
+      <div className="flex items-center gap-4">
+        <label className="relative h-24 w-24 shrink-0 rounded-2xl bg-card border border-line overflow-hidden grid place-items-center cursor-pointer">
+          {value ? <img src={value} alt="" className="h-full w-full object-cover" /> : <span className="text-3xl">📷</span>}
+          {up && <div className="absolute inset-0 grid place-items-center bg-black/60 text-xs font-bold">enviando…</div>}
+          <input type="file" accept="image/*" capture="user" onChange={pick} className="hidden" />
+        </label>
+        <div className="flex-1">
+          <label className="btn inline-block bg-glow2 px-4 py-2 text-sm text-white cursor-pointer">
+            {value ? 'Trocar foto' : 'Adicionar foto'}
+            <input type="file" accept="image/*" capture="user" onChange={pick} className="hidden" />
+          </label>
           <button type="button" onClick={() => onChange(`https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'women' : 'men'}/${Math.floor(Math.random() * 90)}.jpg`)}
-            className="text-xs font-semibold text-glow2">usar foto de teste</button>
+            className="mt-2 block text-xs font-semibold text-muted">usar foto de teste</button>
+          {err && <p className="mt-1 text-xs text-glow">{err}</p>}
         </div>
       </div>
     </div>
