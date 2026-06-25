@@ -1,0 +1,12 @@
+node_modules
+.next
+.vercel
+out
+*.tsbuildinfo
+next-env.d.ts
+.env*.local
+_setup/project.json
+_setup/_vt.txt
+_setup/*.png
+
+.vercel

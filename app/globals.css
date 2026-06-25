@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body { height: 100%; }
+body {
+  background:
+    radial-gradient(1200px 600px at 50% -10%, rgba(123,92,255,.18), transparent 60%),
+    radial-gradient(800px 500px at 90% 110%, rgba(255,61,127,.16), transparent 55%),
+    #0a0710;
+  color: #fff;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+/* limita a experiência a uma coluna mobile-first mesmo no desktop */
+.shell { max-width: 480px; margin: 0 auto; min-height: 100dvh; position: relative; }
+.btn { @apply rounded-full font-bold transition active:scale-95 disabled:opacity-50; }
+.input { @apply w-full rounded-2xl bg-card border border-line px-4 py-3 text-white placeholder:text-muted outline-none focus:border-glow2; }
+.label { @apply text-sm font-semibold text-muted mb-1 block; }
+.chip { @apply rounded-full border px-3 py-2 text-sm font-semibold transition; }
