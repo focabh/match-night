@@ -50,6 +50,53 @@ Chave compartilhada em `mn_config.admin_key` (default `mn-admin-2026` — **troc
 Entre em `/admin`, crie o evento, mostre o QR no balcão. Limitação conhecida: auth de
 admin é por chave única (hardenar com login real depois).
 
+## 🍸 Como rodar um teste real em bar
+Passo a passo pra um teste controlado (10–20 pessoas). App: **https://match-night-bh.vercel.app**
+
+### 1. Criar o evento (admin / bar)
+1. Abra **`/admin`** → entre com a chave admin (`mn_config.admin_key`, default `mn-admin-2026`).
+2. **+ Novo evento** → nome (ex.: "Sexta Solteira"), bar/local, descrição, **duração**
+   (ex.: 4h). Clique **Criar e ativar** → o evento já nasce `active`.
+
+### 2. Gerar e expor o QR
+3. No card do evento → **QR** (mostra o QR) e **baixar QR** (PNG) / **copiar link**.
+4. Imprima o QR (ou ponha numa TV/tablet no balcão). O link é `…/join/<código>`.
+   - Teste antes: escaneie você mesmo e confirme que abre a landing do evento.
+
+### 3. Fluxo do usuário (o que a galera faz)
+5. Pessoa **escaneia o QR** → landing do evento → marca **+18** → **Entrar na noite**.
+6. **Cadastro rápido:** foto (tira na hora), nome, nascimento, gênero, quem quer ver,
+   uma frase, intenção da noite → **Entrar na noite**.
+7. **Deck:** curte (❤ / arrasta pra direita) ou passa (✕ / esquerda); toca na foto pra
+   ampliar; ⋯ pra denunciar/bloquear.
+8. **Match** quando os dois se curtem → aparece em **💜 Matches** (mostra o Instagram).
+9. Quem quiser sair: **Sair** (some do deck e dos matches).
+
+> Dica de massa crítica: peça pra ~10–20 pessoas entrarem **no começo**, pra o deck já
+> ter gente. Combine um gênero/intenção variados pra gerar matches.
+
+### 4. Encerrar o evento (acabou a noite)
+Qualquer um destes encerra a experiência:
+- **Manual:** `/admin` → card do evento → **encerrar** (imediato), **ou**
+- **Por horário:** ao passar do `ends_at`, o evento é tratado como encerrado **na hora**
+  (não depende de cron).
+- **Limpar status** (opcional, p/ stats): `/admin` → **Expirar vencidos** (roda
+  `mn_expire_events()` sob demanda — sem job recorrente no UAT).
+
+### 5. Validar que "morreu tudo"
+Depois de encerrar, confirme (ver `docs/EXPIRATION-TEST.md`):
+- Abrir o **QR/link antigo** (`/join/<código>`) → deve mostrar **"Esse evento já terminou"**.
+- Tentar ir direto no deck (`/event/<código>/deck`) → também mostra "evento terminou"
+  (sem expor perfis).
+- No deck/matches de quem estava dentro → tudo bloqueado; nada de like/match/conversa.
+- `/admin` → **stats** do evento (participantes, likes, passes, matches, denúncias) p/ o bar.
+
+### 6. Pós-teste
+- Os dados ficam só como **estatística**; perfis/matches do evento já não aparecem.
+- Pra um piloto maior/comercial: migrar pra **projeto Supabase dedicado** (trocar 2 linhas
+  do `.env.local` + rodar `schema.sql`+`storage.sql`) e **agendar `mn_expire_events()` via
+  pg_cron** (a cada 1 min) no projeto dedicado.
+
 ## Variáveis de ambiente
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`

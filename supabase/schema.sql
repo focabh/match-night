@@ -378,6 +378,18 @@ begin
   perform public.mn_expire_events();
 end $$;
 
+-- ação manual: expira eventos vencidos (limpa status/participantes/matches).
+-- No UAT compartilhado roda sob demanda (sem pg_cron); no projeto dedicado,
+-- agendar mn_expire_events() via pg_cron.
+create or replace function public.mn_admin_expire(p_key text)
+ returns json language plpgsql security definer set search_path to 'public' as $$
+begin
+  if not public._mn_admin_ok(p_key) then raise exception 'admin_unauthorized'; end if;
+  perform public.mn_expire_events();
+  return json_build_object('ok', true,
+    'eventos_ativos', (select count(*) from public.mn_events where status='active'));
+end $$;
+
 create or replace function public.mn_admin_stats(p_key text, p_event_id uuid)
  returns json language plpgsql stable security definer set search_path to 'public' as $$
 begin
@@ -402,7 +414,7 @@ begin
     'mn_matches_list(uuid,uuid)','mn_block(uuid,uuid,uuid)','mn_report(uuid,uuid,uuid,text)',
     'mn_leave_event(uuid,uuid)',
     'mn_admin_create_event(text,text,text,text,timestamptz,timestamptz)','mn_admin_list_events(text)',
-    'mn_admin_end_event(text,uuid)','mn_admin_stats(text,uuid)'] loop
+    'mn_admin_end_event(text,uuid)','mn_admin_stats(text,uuid)','mn_admin_expire(text)'] loop
     execute format('grant execute on function public.%s to anon, authenticated', f);
   end loop;
 end $$;

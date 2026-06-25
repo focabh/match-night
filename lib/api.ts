@@ -54,5 +54,6 @@ export const adminApi = {
       p_key: key, p_name: name, p_venue: venue, p_description: description, p_starts: starts, p_ends: ends,
     }),
   end: (key: string, eventId: string) => rpc<void>('mn_admin_end_event', { p_key: key, p_event_id: eventId }),
+  expire: (key: string) => rpc<{ ok: boolean; eventos_ativos: number }>('mn_admin_expire', { p_key: key }),
   stats: (key: string, eventId: string) => rpc<any>('mn_admin_stats', { p_key: key, p_event_id: eventId }),
 };

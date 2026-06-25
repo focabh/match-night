@@ -32,7 +32,11 @@ export default function Admin() {
     <main className="px-5 pt-6 pb-16">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-black">Eventos</h1>
-        <button onClick={() => { localStorage.removeItem('mn_admin_key'); setAuthed(false); }} className="text-sm text-muted">Sair</button>
+        <div className="flex items-center gap-3">
+          <button onClick={async () => { const r = await adminApi.expire(key); await refresh(); alert(`Eventos vencidos expirados. Ativos agora: ${r.eventos_ativos}`); }}
+            className="text-sm font-semibold text-amber">Expirar vencidos</button>
+          <button onClick={() => { localStorage.removeItem('mn_admin_key'); setAuthed(false); }} className="text-sm text-muted">Sair</button>
+        </div>
       </div>
       <CreateForm adminKey={key} onCreated={refresh} />
       <div className="mt-6 space-y-3">
