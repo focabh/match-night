@@ -11,7 +11,6 @@ export function ProfileCard({ p, onReport, onBlock }: {
   useEffect(() => { setIdx(0); }, [p.participant_id]); // reseta ao trocar de pessoa
   const i = Math.min(idx, photos.length - 1);
   const cur = photos[i] || p.photo_url;
-  const text = p.profile_prompt || p.bio;
   const s = p.socials || {};
   const hasSocial = s.instagram || s.spotify || s.tiktok;
 
@@ -49,19 +48,12 @@ export function ProfileCard({ p, onReport, onBlock }: {
 
       <div className="absolute inset-x-0 bottom-0 z-20 p-5">
         <div className="flex items-end gap-2">
-          <h2 className="text-3xl font-black leading-none">{p.display_name}</h2>
-          <span className="text-2xl font-bold text-white/80">{p.age}</span>
+          <h2 className="text-3xl font-black leading-none">{p.display_name}{p.age ? '' : ''}</h2>
+          {p.age ? <span className="text-2xl font-bold text-white/80">{p.age}</span> : null}
         </div>
-        <div className="mt-2 inline-flex rounded-full bg-glow/20 border border-glow/40 px-3 py-1 text-xs font-bold text-glow">{p.night_intention}</div>
-        {text && <p className="mt-3 text-white/90 leading-snug line-clamp-3">{text}</p>}
-        {hasSocial && (
-          <div className="mt-3 flex gap-1.5">
-            {s.instagram && <span className="rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-bold backdrop-blur">📸 Instagram</span>}
-            {s.tiktok && <span className="rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-bold backdrop-blur">🎵 TikTok</span>}
-            {s.spotify && <span className="rounded-full bg-white/12 px-2.5 py-1 text-[11px] font-bold backdrop-blur">🎧 Spotify</span>}
-            <span className="self-center text-[10px] text-white/45">revela no match</span>
-          </div>
-        )}
+        {p.night_intention && <div className="mt-2 inline-flex rounded-full bg-glow/20 border border-glow/40 px-3 py-1 text-xs font-bold text-glow">{p.night_intention}</div>}
+        {/* revelação pós-match: bio, prompts e redes NÃO aparecem no deck */}
+        {hasSocial && <p className="mt-3 text-[11px] text-white/45">🔓 perfil e redes liberam no match</p>}
         {photos.length > 1 && <p className="mt-2 text-[11px] text-white/45">toque pra ver mais fotos · {i + 1}/{photos.length}</p>}
       </div>
 

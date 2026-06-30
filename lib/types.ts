@@ -44,7 +44,13 @@ export type MatchRow = {
   night_intention: string;
   instagram: string | null;
   socials?: Socials;
+  bio?: string | null;
+  profile_prompt?: string | null;
+  last_message?: string | null;
+  last_at?: string | null;
 };
+
+export type Message = { id: number; mine: boolean; kind: 'text' | 'here' | 'wave' | 'meet'; body: string | null; created_at: string };
 
 export type ProfileInputPhotos = { photos: string[]; socials: Socials };
 

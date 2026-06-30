@@ -47,13 +47,25 @@ export const api = {
   deck: (eventId: string, userId: string) =>
     rpc<DeckPerson[]>('mn_deck', { p_event_id: eventId, p_user_id: userId }),
 
-  swipe: (eventId: string, userId: string, target: string, action: 'like' | 'pass') =>
-    rpc<{ matched: boolean; match_id?: string }>('mn_swipe', {
+  swipe: (eventId: string, userId: string, target: string, action: 'like' | 'pass' | 'superlike') =>
+    rpc<{ matched: boolean; match_id?: string; super?: boolean }>('mn_swipe', {
       p_event_id: eventId, p_user_id: userId, p_target: target, p_action: action,
     }),
 
+  myState: (eventId: string, userId: string) =>
+    rpc<{ super_likes_left: number; has_photo: boolean; active: number }>('mn_my_state', { p_event_id: eventId, p_user_id: userId }),
+
   matches: (eventId: string, userId: string) =>
     rpc<MatchRow[]>('mn_matches_list', { p_event_id: eventId, p_user_id: userId }),
+
+  messages: (eventId: string, userId: string, matchId: string) =>
+    rpc<any[]>('mn_messages_list', { p_event_id: eventId, p_user_id: userId, p_match_id: matchId }),
+  sendMessage: (eventId: string, userId: string, matchId: string, kind: string, body: string) =>
+    rpc<{ ok: boolean }>('mn_send_message', { p_event_id: eventId, p_user_id: userId, p_match_id: matchId, p_kind: kind, p_body: body }),
+  unmatch: (eventId: string, userId: string, matchId: string) =>
+    rpc<void>('mn_unmatch', { p_event_id: eventId, p_user_id: userId, p_match_id: matchId }),
+  unswipe: (eventId: string, userId: string, target: string) =>
+    rpc<void>('mn_unswipe', { p_event_id: eventId, p_user_id: userId, p_target: target }),
 
   block: (eventId: string, userId: string, target: string) =>
     rpc<void>('mn_block', { p_event_id: eventId, p_user_id: userId, p_target: target }),

@@ -44,8 +44,25 @@ export default function Perfil() {
   return (
     <main className="px-5 py-8 pb-28">
       <button onClick={() => router.push(`/event/${code}/deck`)} className="text-sm text-muted">← voltar</button>
-      <h1 className="mt-3 text-2xl font-black">Completar perfil</h1>
+      <h1 className="mt-3 text-2xl font-black">Meu perfil</h1>
       <p className="mt-1 text-sm text-muted">Tudo opcional — mas foto e nome dão muito mais match.</p>
+
+      {/* ver como os outros me veem */}
+      <div className="mt-5 rounded-2xl border border-line bg-card/40 p-3">
+        <div className="text-[11px] font-bold uppercase tracking-wide text-muted">👁️ Como os outros te veem</div>
+        <div className="relative mt-2 h-48 overflow-hidden rounded-2xl border border-line">
+          {photos[0]
+            ? <img src={photos[0]} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            : <div className="absolute inset-0 grid place-items-center text-6xl text-white" style={{ background: 'radial-gradient(120% 90% at 50% 0%,#3a2e8c,#1b1326)' }}>{(name || '🙂').trim().charAt(0).toUpperCase()}</div>}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+          <div className="absolute left-3 top-3 rounded-full bg-black/50 px-2.5 py-1 text-[10px] font-bold" style={{ color: t.primary }}>🟢 aqui agora</div>
+          <div className="absolute inset-x-0 bottom-0 p-3">
+            <div className="text-xl font-black text-white">{name || 'Você'}{ageOf(birth) ? `, ${ageOf(birth)}` : ''}</div>
+            {intention && <span className="mt-1 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: t.primary + '33', color: '#fff' }}>{intention}</span>}
+          </div>
+        </div>
+        <p className="mt-2 text-[11px] text-muted">No deck mostramos só isso. Bio e redes só liberam depois do match. 🔓</p>
+      </div>
 
       <div className="mt-6 space-y-5">
         <PhotoGallery photos={photos} onChange={setPhotos} accent={t.primary} />
@@ -88,6 +105,11 @@ export default function Perfil() {
       </div>
     </main>
   );
+}
+
+function ageOf(birth: string): number | null {
+  if (!birth) return null;
+  try { return Math.floor((Date.now() - new Date(birth).getTime()) / 3.15576e10); } catch { return null; }
 }
 
 function Social({ icon, ph, value, onChange }: { icon: string; ph: string; value: string; onChange: (v: string) => void }) {

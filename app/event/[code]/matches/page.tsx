@@ -42,34 +42,21 @@ export default function Matches() {
       ) : (
         <div className="mt-5 space-y-3">
           {rows.map((m) => (
-            <div key={m.match_id} className="flex items-center gap-3 rounded-2xl bg-card border border-line p-3">
-              <img src={m.photo_url} alt="" className="h-16 w-16 rounded-xl object-cover" />
+            <button key={m.match_id} onClick={() => { ev && api.track(ev.event_id, uid, 'conversation_started', undefined, { match: m.match_id }); router.push(`/event/${code}/chat/${m.match_id}`); }}
+              className="flex w-full items-center gap-3 rounded-2xl bg-card border border-line p-3 text-left">
+              {m.photo_url
+                ? <img src={m.photo_url} alt="" className="h-16 w-16 rounded-xl object-cover" />
+                : <div className="grid h-16 w-16 place-items-center rounded-xl bg-ink2 text-2xl">{(m.display_name || '🙂').charAt(0)}</div>}
               <div className="min-w-0 flex-1">
-                <div className="font-black">{m.display_name}, {m.age}</div>
-                <div className="text-xs text-muted">{m.night_intention}</div>
-                <Socials m={m} onContact={() => ev && api.track(ev.event_id, uid, 'conversation_started', undefined, { match: m.match_id })} />
+                <div className="font-black">{m.display_name}{m.age ? `, ${m.age}` : ''}</div>
+                <div className="truncate text-xs text-muted">{m.last_message ? m.last_message : (m.night_intention || 'Toque pra conversar e se encontrar')}</div>
               </div>
-            </div>
+              <span className="shrink-0 text-lg" aria-hidden>💬</span>
+            </button>
           ))}
         </div>
       )}
       <p className="mt-8 text-center text-xs text-muted">As conexões somem quando o evento terminar.</p>
     </main>
-  );
-}
-
-function Socials({ m, onContact }: { m: MatchRow; onContact: () => void }) {
-  const s = m.socials || {};
-  const ig = s.instagram || m.instagram;
-  const tk = s.tiktok;
-  const sp = s.spotify;
-  if (!ig && !tk && !sp) return <div className="mt-1 text-xs text-muted">Sem redes — se achem por aí 😉</div>;
-  const spHref = sp ? (/^https?:\/\//.test(sp) ? sp : `https://open.spotify.com/search/${encodeURIComponent(sp)}`) : '';
-  return (
-    <div className="mt-1.5 flex flex-wrap gap-1.5">
-      {ig && <a onClick={onContact} href={`https://instagram.com/${ig.replace('@', '')}`} target="_blank" className="rounded-full bg-glow/15 px-2.5 py-1 text-xs font-bold text-glow">📸 {ig.startsWith('@') ? ig : '@' + ig}</a>}
-      {tk && <a onClick={onContact} href={`https://tiktok.com/@${tk.replace('@', '')}`} target="_blank" className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-white">🎵 @{tk.replace('@', '')}</a>}
-      {sp && <a onClick={onContact} href={spHref} target="_blank" className="rounded-full bg-[#1db954]/20 px-2.5 py-1 text-xs font-bold text-[#1db954]">🎧 Spotify</a>}
-    </div>
   );
 }
