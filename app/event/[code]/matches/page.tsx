@@ -16,7 +16,10 @@ export default function Matches() {
   useEffect(() => {
     (async () => {
       const e = await api.eventByCode(code); setEv(e);
-      if (e && e.is_live && !e.ended) setRows(await api.matches(e.event_id, uid).catch(() => []));
+      if (e && e.is_live && !e.ended) {
+        setRows(await api.matches(e.event_id, uid).catch(() => []));
+        api.track(e.event_id, uid, 'matches_viewed');
+      }
     })();
   }, [code, uid]);
 
@@ -44,7 +47,7 @@ export default function Matches() {
               <div className="min-w-0 flex-1">
                 <div className="font-black">{m.display_name}, {m.age}</div>
                 <div className="text-xs text-muted">{m.night_intention}</div>
-                <Socials m={m} />
+                <Socials m={m} onContact={() => ev && api.track(ev.event_id, uid, 'conversation_started', undefined, { match: m.match_id })} />
               </div>
             </div>
           ))}
@@ -55,7 +58,7 @@ export default function Matches() {
   );
 }
 
-function Socials({ m }: { m: MatchRow }) {
+function Socials({ m, onContact }: { m: MatchRow; onContact: () => void }) {
   const s = m.socials || {};
   const ig = s.instagram || m.instagram;
   const tk = s.tiktok;
@@ -64,9 +67,9 @@ function Socials({ m }: { m: MatchRow }) {
   const spHref = sp ? (/^https?:\/\//.test(sp) ? sp : `https://open.spotify.com/search/${encodeURIComponent(sp)}`) : '';
   return (
     <div className="mt-1.5 flex flex-wrap gap-1.5">
-      {ig && <a href={`https://instagram.com/${ig.replace('@', '')}`} target="_blank" className="rounded-full bg-glow/15 px-2.5 py-1 text-xs font-bold text-glow">📸 {ig.startsWith('@') ? ig : '@' + ig}</a>}
-      {tk && <a href={`https://tiktok.com/@${tk.replace('@', '')}`} target="_blank" className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-white">🎵 @{tk.replace('@', '')}</a>}
-      {sp && <a href={spHref} target="_blank" className="rounded-full bg-[#1db954]/20 px-2.5 py-1 text-xs font-bold text-[#1db954]">🎧 Spotify</a>}
+      {ig && <a onClick={onContact} href={`https://instagram.com/${ig.replace('@', '')}`} target="_blank" className="rounded-full bg-glow/15 px-2.5 py-1 text-xs font-bold text-glow">📸 {ig.startsWith('@') ? ig : '@' + ig}</a>}
+      {tk && <a onClick={onContact} href={`https://tiktok.com/@${tk.replace('@', '')}`} target="_blank" className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-white">🎵 @{tk.replace('@', '')}</a>}
+      {sp && <a onClick={onContact} href={spHref} target="_blank" className="rounded-full bg-[#1db954]/20 px-2.5 py-1 text-xs font-bold text-[#1db954]">🎧 Spotify</a>}
     </div>
   );
 }

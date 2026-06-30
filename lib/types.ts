@@ -52,7 +52,7 @@ export type ProfileInput = {
   display_name: string;
   birthdate: string; // yyyy-mm-dd
   gender: string;
-  interested_in: string;
+  interested_in?: string[];  // multi-seleção (preferência)
   photo_url: string;     // = photos[0] (compat)
   photos?: string[];     // galeria estilo Tinder
   bio: string;
@@ -68,6 +68,28 @@ export const GENDERS = [
   { v: 'nonbinary', l: 'Não-binário' },
   { v: 'other', l: 'Prefiro me descrever' },
 ];
+
+// ---- Onboarding "B Presencial" ----
+// "Sobre você" (identidade) — ordem conforme spec. 'other' abre autodescrição.
+export const GENDER_OPTS = [
+  { v: 'man', l: 'Homem' },
+  { v: 'woman', l: 'Mulher' },
+  { v: 'nonbinary', l: 'Não binário' },
+  { v: 'other', l: 'Outro…' },
+];
+// "Quem você quer conhecer" — multi-seleção. "Todos" é atalho (marca todas).
+export const PREF_OPTS = [
+  { v: 'women', l: 'Mulheres' },
+  { v: 'men', l: 'Homens' },
+  { v: 'nonbinary', l: 'Pessoas não binárias' },
+];
+export const PREF_ALL = PREF_OPTS.map((o) => o.v); // ['women','men','nonbinary']
+// normaliza p/ o banco: todas marcadas => ['all'] (inclui 'outro' e é inclusivo)
+export const normalizePrefs = (sel: string[]) =>
+  PREF_ALL.every((v) => sel.includes(v)) ? ['all'] : sel;
+// desnormaliza p/ a UI: 'all' => todas marcadas
+export const expandPrefs = (stored: string[] | null | undefined) =>
+  !stored || stored.includes('all') ? [...PREF_ALL] : stored.filter((v) => PREF_ALL.includes(v));
 export const INTERESTS = [
   { v: 'women', l: 'Mulheres' },
   { v: 'men', l: 'Homens' },

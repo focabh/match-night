@@ -17,7 +17,12 @@ export function ProfileCard({ p, onReport, onBlock }: {
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[28px] border border-line bg-card select-none">
-      <img src={cur} alt={p.display_name} draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+      {cur
+        ? <img src={cur} alt={p.display_name} draggable={false} className="absolute inset-0 h-full w-full object-cover" />
+        : <div className="absolute inset-0 grid place-items-center text-7xl"
+            style={{ background: 'radial-gradient(120% 90% at 50% 0%,#3a2e8c,#1b1326)' }}>
+            <span>{(p.display_name || '🙂').trim().charAt(0).toUpperCase()}</span>
+          </div>}
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
       {/* barras de progresso (uma por foto) — estilo Tinder */}

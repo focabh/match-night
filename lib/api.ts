@@ -16,16 +16,33 @@ export const api = {
       p_event_id: eventId, p_user_id: userId,
     }),
 
-  join: (eventId: string, userId: string, p: ProfileInput) =>
-    rpc<{ participant_id: string; age: number }>('mn_join_event', {
-      p_event_id: eventId, p_user_id: userId,
-      p_display_name: p.display_name, p_birthdate: p.birthdate, p_gender: p.gender,
-      p_interested_in: p.interested_in, p_photo_url: p.photo_url, p_bio: p.bio,
-      p_prompt: p.prompt, p_intention: p.intention, p_instagram: p.instagram ?? null,
-      p_consent: true,
-      p_photos: (p.photos && p.photos.length ? p.photos : (p.photo_url ? [p.photo_url] : [])),
-      p_socials: p.socials ?? {},
+  // ENTRADA RÁPIDA (B Presencial): só gênero + preferência multi-seleção
+  quickJoin: (eventId: string, userId: string, gender: string, interestedIn: string[], genderDetail?: string) =>
+    rpc<{ participant_id: string }>('mn_quick_join', {
+      p_event_id: eventId, p_user_id: userId, p_gender: gender,
+      p_interested_in: interestedIn, p_gender_detail: genderDetail ?? null, p_consent: true,
     }),
+
+  // alterar preferências durante o evento
+  setPrefs: (eventId: string, userId: string, gender: string, interestedIn: string[], genderDetail?: string) =>
+    rpc<void>('mn_set_prefs', {
+      p_event_id: eventId, p_user_id: userId, p_gender: gender,
+      p_interested_in: interestedIn, p_gender_detail: genderDetail ?? null,
+    }),
+
+  // completar perfil DEPOIS de entrar (opcional)
+  completeProfile: (eventId: string, userId: string, p: Partial<ProfileInput>) =>
+    rpc<{ ok: boolean }>('mn_complete_profile', {
+      p_event_id: eventId, p_user_id: userId,
+      p_display_name: p.display_name ?? null, p_birthdate: p.birthdate || null,
+      p_photos: p.photos ?? [], p_bio: p.bio ?? null, p_prompt: p.prompt ?? null,
+      p_intention: p.intention ?? null,
+      p_socials: { instagram: p.instagram, ...(p.socials ?? {}) },
+    }),
+
+  // funil de analytics (fire-and-forget)
+  track: (eventId: string, userId: string, step: string, variant?: string, meta?: Record<string, unknown>) =>
+    rpc<void>('mn_track', { p_event_id: eventId, p_user_id: userId, p_step: step, p_variant: variant ?? null, p_meta: meta ?? {} }).catch(() => {}),
 
   deck: (eventId: string, userId: string) =>
     rpc<DeckPerson[]>('mn_deck', { p_event_id: eventId, p_user_id: userId }),

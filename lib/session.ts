@@ -20,3 +20,11 @@ export function saveProfile(p: unknown) {
 export function loadProfile<T>(): T | null {
   try { const v = localStorage.getItem(PKEY); return v ? (JSON.parse(v) as T) : null; } catch { return null; }
 }
+
+// Híbrido: lembra a última escolha do onboarding (gênero + preferência) p/ pré-preencher.
+const OKEY = 'mn_onboard';
+export type Onboard = { gender: string; gender_detail?: string; prefs: string[] };
+export function saveOnboard(o: Onboard) { try { localStorage.setItem(OKEY, JSON.stringify(o)); } catch {} }
+export function loadOnboard(): Onboard | null {
+  try { const v = localStorage.getItem(OKEY); return v ? (JSON.parse(v) as Onboard) : null; } catch { return null; }
+}

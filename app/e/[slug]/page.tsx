@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { getUserId } from '@/lib/session';
@@ -24,7 +24,11 @@ export default function EventLanding() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
+  const tracked = useRef(false);
   useEffect(() => { api.eventByCode(slug).then(setEv).catch(() => setEv(null)); }, [slug]);
+  useEffect(() => {
+    if (ev && (ev as any).event_id && !tracked.current) { tracked.current = true; api.track((ev as any).event_id, getUserId(), 'landing'); }
+  }, [ev]);
 
   if (ev === undefined) return <main className="grid min-h-[100dvh] place-items-center text-muted">Carregando…</main>;
   if (ev === null) return <NotFound />;
@@ -38,6 +42,7 @@ export default function EventLanding() {
   async function enter() {
     if (!confirmed) { setNeedConsent(true); return; }
     setBusy(true); setErr('');
+    api.track(ev!.event_id, getUserId(), 'enter_click');
     try {
       const part = await api.myParticipation(ev!.event_id, getUserId());
       if (part && part.status === 'active') router.push(`/event/${code}/deck`);
