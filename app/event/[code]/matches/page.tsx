@@ -44,10 +44,7 @@ export default function Matches() {
               <div className="min-w-0 flex-1">
                 <div className="font-black">{m.display_name}, {m.age}</div>
                 <div className="text-xs text-muted">{m.night_intention}</div>
-                {m.instagram ? (
-                  <a href={`https://instagram.com/${m.instagram.replace('@', '')}`} target="_blank"
-                     className="mt-1 inline-block text-sm font-bold text-glow">📸 {m.instagram}</a>
-                ) : <div className="mt-1 text-xs text-muted">Sem Instagram — se achem por aí 😉</div>}
+                <Socials m={m} />
               </div>
             </div>
           ))}
@@ -55,5 +52,21 @@ export default function Matches() {
       )}
       <p className="mt-8 text-center text-xs text-muted">As conexões somem quando o evento terminar.</p>
     </main>
+  );
+}
+
+function Socials({ m }: { m: MatchRow }) {
+  const s = m.socials || {};
+  const ig = s.instagram || m.instagram;
+  const tk = s.tiktok;
+  const sp = s.spotify;
+  if (!ig && !tk && !sp) return <div className="mt-1 text-xs text-muted">Sem redes — se achem por aí 😉</div>;
+  const spHref = sp ? (/^https?:\/\//.test(sp) ? sp : `https://open.spotify.com/search/${encodeURIComponent(sp)}`) : '';
+  return (
+    <div className="mt-1.5 flex flex-wrap gap-1.5">
+      {ig && <a href={`https://instagram.com/${ig.replace('@', '')}`} target="_blank" className="rounded-full bg-glow/15 px-2.5 py-1 text-xs font-bold text-glow">📸 {ig.startsWith('@') ? ig : '@' + ig}</a>}
+      {tk && <a href={`https://tiktok.com/@${tk.replace('@', '')}`} target="_blank" className="rounded-full bg-white/10 px-2.5 py-1 text-xs font-bold text-white">🎵 @{tk.replace('@', '')}</a>}
+      {sp && <a href={spHref} target="_blank" className="rounded-full bg-[#1db954]/20 px-2.5 py-1 text-xs font-bold text-[#1db954]">🎧 Spotify</a>}
+    </div>
   );
 }

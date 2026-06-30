@@ -24,7 +24,7 @@ export default function Register() {
   const saved = typeof window !== 'undefined' ? loadProfile<ProfileInput>() : null;
   const [f, setF] = useState<ProfileInput>(saved ?? {
     display_name: '', birthdate: '', gender: '', interested_in: '',
-    photo_url: '', bio: '', prompt: '', intention: '', instagram: '',
+    photo_url: '', photos: [], bio: '', prompt: '', intention: '', instagram: '', socials: {},
   });
   const [promptIdx, setPromptIdx] = useState(0);
   const [err, setErr] = useState('');
@@ -46,7 +46,8 @@ export default function Register() {
   async function submit() {
     if (busy) return;
     setErr('');
-    if (!f.photo_url) return fail('Adicione sua foto.');
+    const photos = f.photos || [];
+    if (photos.length === 0) return fail('Adicione pelo menos uma foto.');
     if (!f.display_name.trim()) return fail('Diga seu nome ou apelido.');
     if (!f.birthdate) return fail('Informe sua data de nascimento.');
     if (!f.gender) return fail('Escolha como você se identifica.');
@@ -56,8 +57,14 @@ export default function Register() {
     if (!ev) return fail('Carregando o evento… tente de novo em 1s.');
     setBusy(true);
     try {
-      await api.join(ev.event_id, getUserId(), f);
-      saveProfile(f);
+      const socials = {
+        instagram: f.instagram?.trim() || undefined,
+        spotify: f.socials?.spotify?.trim() || undefined,
+        tiktok: f.socials?.tiktok?.trim() || undefined,
+      };
+      const payload: ProfileInput = { ...f, photos, photo_url: photos[0], socials };
+      await api.join(ev.event_id, getUserId(), payload);
+      saveProfile(payload);
       router.push(`/event/${code}/deck`);
     } catch (e: any) {
       const key = String(e?.message || '').replace(/^.*?:/, '').trim();
@@ -71,7 +78,7 @@ export default function Register() {
       <p className="mt-1 text-sm text-muted">Rápido. Só o suficiente pra darem match com você.</p>
 
       <div className="mt-6 space-y-5">
-        <Photo value={f.photo_url} onChange={(v) => set('photo_url', v)} />
+        <PhotoGallery photos={f.photos || []} onChange={(arr) => { setF((p) => ({ ...p, photos: arr, photo_url: arr[0] || '' })); if (err) setErr(''); }} />
 
         <div>
           <label className="label">Nome / apelido *</label>
@@ -112,8 +119,13 @@ export default function Register() {
         </div>
 
         <div>
-          <label className="label">Instagram (opcional)</label>
-          <input className="input" value={f.instagram} onChange={(e) => set('instagram', e.target.value)} placeholder="@seu.user" autoCapitalize="none" />
+          <label className="label">Redes sociais (opcional)</label>
+          <p className="-mt-1 mb-2 text-xs text-muted">Aparecem pra quem der match com você.</p>
+          <div className="space-y-2">
+            <SocialInput icon="📸" prefix="@" placeholder="instagram" value={f.instagram || ''} onChange={(v) => set('instagram', v)} />
+            <SocialInput icon="🎵" prefix="@" placeholder="tiktok" value={f.socials?.tiktok || ''} onChange={(v) => setF((p) => ({ ...p, socials: { ...p.socials, tiktok: v } }))} />
+            <SocialInput icon="🎧" prefix="" placeholder="spotify (perfil ou playlist)" value={f.socials?.spotify || ''} onChange={(v) => setF((p) => ({ ...p, socials: { ...p.socials, spotify: v } }))} />
+          </div>
         </div>
       </div>
 
@@ -151,48 +163,78 @@ function Picker({ label, opts, value, onPick, accent }: { label: string; opts: {
   );
 }
 
-// Upload REAL pro Supabase Storage (bucket mn-photos, público).
-function Photo({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SocialInput({ icon, prefix, placeholder, value, onChange }: { icon: string; prefix: string; placeholder: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex items-center gap-2 rounded-2xl bg-card border border-line px-3">
+      <span className="text-lg">{icon}</span>
+      {prefix && <span className="text-muted">{prefix}</span>}
+      <input className="w-full bg-transparent py-3 text-white placeholder:text-muted outline-none" value={value}
+        onChange={(e) => onChange(e.target.value.replace(/^@/, ''))} placeholder={placeholder} autoCapitalize="none" />
+    </div>
+  );
+}
+
+// Galeria de fotos estilo Tinder: até 6, multi-seleção da galeria do celular,
+// 1ª foto = capa, remover e "tornar capa". Upload real pro Supabase Storage.
+const MAX_PHOTOS = 6;
+function PhotoGallery({ photos, onChange }: { photos: string[]; onChange: (arr: string[]) => void }) {
   const [up, setUp] = useState(false);
   const [err, setErr] = useState('');
 
-  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setErr('');
-    if (file.size > 5_242_880) { setErr('Foto até 5MB.'); return; }
-    setUp(true);
-    try {
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${getUserId()}/${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from('mn-photos').upload(path, file, { upsert: true, contentType: file.type });
-      if (error) throw error;
-      const { data } = supabase.storage.from('mn-photos').getPublicUrl(path);
-      onChange(data.publicUrl);
-    } catch {
-      setErr('Não rolou enviar a foto. Tente outra.');
-    } finally { setUp(false); }
+  async function uploadOne(file: File): Promise<string | null> {
+    if (file.size > 8_388_608) { setErr('Cada foto até 8MB.'); return null; }
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const path = `${getUserId()}/${Date.now()}-${Math.floor(performance.now())}.${ext}`;
+    const { error } = await supabase.storage.from('mn-photos').upload(path, file, { upsert: true, contentType: file.type });
+    if (error) return null;
+    return supabase.storage.from('mn-photos').getPublicUrl(path).data.publicUrl;
   }
 
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    setErr(''); setUp(true);
+    try {
+      const room = MAX_PHOTOS - photos.length;
+      const urls: string[] = [];
+      for (const file of files.slice(0, room)) { const u = await uploadOne(file); if (u) urls.push(u); }
+      if (urls.length) onChange([...photos, ...urls]);
+      else if (!err) setErr('Não rolou enviar. Tente outra foto.');
+    } finally { setUp(false); }
+  }
+  const remove = (i: number) => onChange(photos.filter((_, j) => j !== i));
+  const makeCover = (i: number) => onChange([photos[i], ...photos.filter((_, j) => j !== i)]);
+
+  const cells = Array.from({ length: MAX_PHOTOS });
   return (
     <div>
-      <label className="label">Sua foto *</label>
-      <div className="flex items-center gap-4">
-        <label className="relative h-24 w-24 shrink-0 rounded-2xl bg-card border border-line overflow-hidden grid place-items-center cursor-pointer">
-          {value ? <img src={value} alt="" className="h-full w-full object-cover" /> : <span className="text-3xl">📷</span>}
-          {up && <div className="absolute inset-0 grid place-items-center bg-black/60 text-xs font-bold">enviando…</div>}
-          <input type="file" accept="image/*" capture="user" onChange={pick} className="hidden" />
-        </label>
-        <div className="flex-1">
-          <label className="btn inline-block bg-glow2 px-4 py-2 text-sm text-white cursor-pointer">
-            {value ? 'Trocar foto' : 'Adicionar foto'}
-            <input type="file" accept="image/*" capture="user" onChange={pick} className="hidden" />
-          </label>
-          <button type="button" onClick={() => onChange(`https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'women' : 'men'}/${Math.floor(Math.random() * 90)}.jpg`)}
-            className="mt-2 block text-xs font-semibold text-glow2 underline">usar foto de teste</button>
-          {err && <p className="mt-1 text-xs text-glow">{err}</p>}
-        </div>
+      <label className="label">Suas fotos * <span className="text-muted">(a 1ª é a capa · arraste a galeria)</span></label>
+      <div className="grid grid-cols-3 gap-2">
+        {cells.map((_, i) => {
+          const url = photos[i];
+          if (url) return (
+            <div key={i} className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-line bg-card">
+              <img src={url} alt="" className="h-full w-full object-cover" />
+              {i === 0 && <span className="absolute left-1 top-1 rounded-full bg-glow px-2 py-0.5 text-[9px] font-black text-white">CAPA</span>}
+              <button type="button" onClick={() => remove(i)} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-xs text-white">✕</button>
+              {i !== 0 && <button type="button" onClick={() => makeCover(i)} className="absolute inset-x-1 bottom-1 rounded-full bg-black/60 py-0.5 text-[10px] font-bold text-white">★ capa</button>}
+            </div>
+          );
+          const isNext = i === photos.length;
+          return (
+            <label key={i} className={`grid aspect-[3/4] cursor-pointer place-items-center rounded-2xl border-2 border-dashed ${isNext ? 'border-glow2 bg-glow2/10' : 'border-line bg-card/40'}`}>
+              <span className={`text-2xl ${isNext ? 'text-glow2' : 'text-muted'}`}>＋</span>
+              <input type="file" accept="image/*" multiple onChange={pick} className="hidden" disabled={up} />
+            </label>
+          );
+        })}
       </div>
+      {up && <p className="mt-1 text-xs text-glow2">enviando fotos…</p>}
+      {err && <p className="mt-1 text-xs text-glow">{err}</p>}
+      <button type="button"
+        onClick={() => { const room = MAX_PHOTOS - photos.length; const extra = Array.from({ length: Math.min(room, 3) }, () => `https://randomuser.me/api/portraits/${Math.random() > 0.5 ? 'women' : 'men'}/${Math.floor(Math.random() * 90)}.jpg`); onChange([...photos, ...extra]); }}
+        className="mt-2 text-xs font-semibold text-glow2 underline">usar fotos de teste</button>
     </div>
   );
 }

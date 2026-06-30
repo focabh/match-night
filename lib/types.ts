@@ -19,6 +19,8 @@ export type EventPublic = {
   rewards?: any[];
 };
 
+export type Socials = { instagram?: string; spotify?: string; tiktok?: string };
+
 export type DeckPerson = {
   participant_id: string;
   display_name: string;
@@ -28,6 +30,8 @@ export type DeckPerson = {
   profile_prompt: string | null;
   night_intention: string;
   photo_url: string;
+  photos?: string[];
+  socials?: Socials;
 };
 
 export type MatchRow = {
@@ -36,20 +40,26 @@ export type MatchRow = {
   display_name: string;
   age: number;
   photo_url: string;
+  photos?: string[];
   night_intention: string;
   instagram: string | null;
+  socials?: Socials;
 };
+
+export type ProfileInputPhotos = { photos: string[]; socials: Socials };
 
 export type ProfileInput = {
   display_name: string;
   birthdate: string; // yyyy-mm-dd
   gender: string;
   interested_in: string;
-  photo_url: string;
+  photo_url: string;     // = photos[0] (compat)
+  photos?: string[];     // galeria estilo Tinder
   bio: string;
   prompt: string;
   intention: string;
   instagram?: string;
+  socials?: Socials;
 };
 
 export const GENDERS = [

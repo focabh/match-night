@@ -23,6 +23,8 @@ export const api = {
       p_interested_in: p.interested_in, p_photo_url: p.photo_url, p_bio: p.bio,
       p_prompt: p.prompt, p_intention: p.intention, p_instagram: p.instagram ?? null,
       p_consent: true,
+      p_photos: (p.photos && p.photos.length ? p.photos : (p.photo_url ? [p.photo_url] : [])),
+      p_socials: p.socials ?? {},
     }),
 
   deck: (eventId: string, userId: string) =>
