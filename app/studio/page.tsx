@@ -3,9 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import QRCode from 'qrcode';
 import { studioApi } from '@/lib/api';
 import {
-  TEMPLATES, templateByKey, REWARD_KINDS, EVENT_TYPES,
+  TEMPLATES, templateByKey, REWARD_KINDS, EVENT_TYPES, PALETTES, coversFor, readableText,
   type Theme, type Matchmaker, type Reward,
 } from '@/lib/studio';
+import { AddressSearch } from '@/components/studio/AddressSearch';
 import { Preview, SURFACES, type Surface, type PreviewModel } from '@/components/studio/Preview';
 
 const slugify = (s: string) => s.toLowerCase().normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
@@ -55,7 +56,31 @@ export default function Studio() {
       <button onClick={() => login(key)} className="btn mt-3 w-full bg-glow2 py-3 text-white">Entrar</button>
     </main>
   );
-  return <Wizard adminKey={key} />;
+  return <ModeRouter adminKey={key} />;
+}
+
+function ModeRouter({ adminKey }: { adminKey: string }) {
+  const [mode, setMode] = useState<'choose' | 'quick' | 'full'>('choose');
+  if (mode === 'quick') return <QuickWizard adminKey={adminKey} onFull={() => setMode('full')} />;
+  if (mode === 'full') return <Wizard adminKey={adminKey} />;
+  return (
+    <main className="px-6 pb-16 pt-16">
+      <div className="text-4xl">✨</div>
+      <h1 className="mt-3 text-2xl font-black">Criar um evento</h1>
+      <p className="mt-1 text-sm text-muted">Como você prefere começar?</p>
+      <div className="mt-7 space-y-3">
+        <button onClick={() => setMode('quick')} className="w-full rounded-3xl border border-glow2 bg-glow2/10 p-5 text-left">
+          <div className="flex items-center gap-2"><span className="text-2xl">⚡</span><span className="text-lg font-black">Modo Rápido</span><span className="ml-auto rounded-full bg-glow2 px-2.5 py-1 text-[10px] font-bold text-white">~1 min</span></div>
+          <p className="mt-2 text-sm text-muted">Escolha um template, ajuste nome, data e foto, e publique. O resto a gente cuida com bons padrões.</p>
+        </button>
+        <button onClick={() => setMode('full')} className="w-full rounded-3xl border border-line bg-card p-5 text-left">
+          <div className="flex items-center gap-2"><span className="text-2xl">🎛️</span><span className="text-lg font-black">Modo Completo</span></div>
+          <p className="mt-2 text-sm text-muted">Controle total: cores, badges, gamificação, super likes, happy hour, prêmios, landing e QR.</p>
+        </button>
+      </div>
+      <a href="/admin" className="mt-8 block text-center text-sm text-muted">ver meus eventos →</a>
+    </main>
+  );
 }
 
 function Wizard({ adminKey }: { adminKey: string }) {
@@ -184,7 +209,7 @@ function Wizard({ adminKey }: { adminKey: string }) {
           {step > 0 && <button onClick={() => setStep(step - 1)} className="btn flex-1 border border-line bg-card py-3 text-white">Voltar</button>}
           {step < 7
             ? <button onClick={() => setStep(step + 1)} className="btn flex-[2] bg-glow2 py-3 font-bold text-white">Próximo</button>
-            : <button onClick={publish} disabled={busy} className="btn flex-[2] py-3 font-bold text-white shadow-neon" style={{ background: d.theme.button }}>{busy ? 'Publicando…' : '🚀 Publicar evento'}</button>}
+            : <button onClick={publish} disabled={busy} className="btn flex-[2] py-3 font-bold shadow-neon" style={{ background: d.theme.button, color: readableText(d.theme.button) }}>{busy ? 'Publicando…' : '🚀 Publicar evento'}</button>}
         </div>
       </div>
     </main>
@@ -223,7 +248,10 @@ function StepVenue({ d, set, venues, chooseVenue, setTheme }: any) {
       {(novo || !venues.length) && (
         <div className="space-y-3">
           <Field label="Nome do bar / local *"><input className="input" value={d.venueName} onChange={(e) => set({ venueId: null, venueName: e.target.value })} placeholder="Ex.: Laicos" /></Field>
-          <Field label="Endereço"><input className="input" value={d.venueExtra.address} onChange={(e) => set({ venueExtra: { ...d.venueExtra, address: e.target.value } })} placeholder="Rua, bairro" /></Field>
+          <div><label className="label">Endereço</label>
+            <AddressSearch value={d.venueExtra.address}
+              onPick={(r) => set({ venueExtra: { ...d.venueExtra, address: r.address, map_url: r.mapUrl }, venueName: d.venueName || r.name })} />
+          </div>
           <Field label="Instagram"><input className="input" value={d.venueExtra.instagram} onChange={(e) => set({ venueExtra: { ...d.venueExtra, instagram: e.target.value } })} placeholder="@dobar" autoCapitalize="none" /></Field>
           <Field label="Logo (URL)"><input className="input" value={d.theme.logo_url} onChange={(e) => setTheme({ logo_url: e.target.value })} placeholder="https://…" autoCapitalize="none" /></Field>
           <Field label="Sobre o local"><textarea className="input" rows={2} value={d.venueExtra.about} onChange={(e) => set({ venueExtra: { ...d.venueExtra, about: e.target.value } })} placeholder="Uma linha sobre a casa" /></Field>
@@ -404,37 +432,201 @@ function StepPublish({ d, slug, err, busy, publish }: any) {
         </ul>
       </div>
       {err && <p className="mt-3 rounded-xl border border-glow/50 bg-glow/15 px-3 py-2 text-sm font-semibold text-white">{err}</p>}
-      <button onClick={publish} disabled={busy} className="btn mt-4 w-full py-4 text-lg font-bold text-white shadow-neon" style={{ background: d.theme.button }}>{busy ? 'Publicando…' : '🚀 Publicar evento'}</button>
+      <button onClick={publish} disabled={busy} className="btn mt-4 w-full py-4 text-lg font-bold shadow-neon" style={{ background: d.theme.button, color: readableText(d.theme.button) }}>{busy ? 'Publicando…' : '🚀 Publicar evento'}</button>
     </Card>
+  );
+}
+
+// ============================================================
+// MODO RÁPIDO — 1 tela, < 60s. Template + nome + data + foto + paleta.
+// ============================================================
+function QuickWizard({ adminKey, onFull }: { adminKey: string; onFull: () => void }) {
+  const t0 = TEMPLATES[0];
+  const [tplKey, setTplKey] = useState(t0.key);
+  const [name, setName] = useState(t0.theme.headline);
+  const [venueName, setVenueName] = useState('');
+  const [address, setAddress] = useState('');
+  const [mapUrl, setMapUrl] = useState('');
+  const [date, setDate] = useState(todayStr());
+  const [start, setStart] = useState('21:00');
+  const [end, setEnd] = useState('02:00');
+  const [coverIdx, setCoverIdx] = useState(0);
+  const [customCover, setCustomCover] = useState('');
+  const [palIdx, setPalIdx] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+  const [pub, setPub] = useState<{ slug: string; code: string } | null>(null);
+
+  const tpl = templateByKey(tplKey);
+  const covers = coversFor(tplKey);
+  const pal = PALETTES[palIdx];
+  const cover = customCover || covers[coverIdx] || tpl.theme.cover_url;
+
+  const theme: Theme = useMemo(() => ({
+    ...tpl.theme, logo_url: '',
+    headline: name || tpl.theme.headline,
+    primary: pal.primary, secondary: pal.secondary, button: pal.button,
+    cover_url: cover, bg_url: cover,
+  }), [tpl, name, pal, cover]);
+
+  // ao trocar template, alinha nome/paleta/capa aos defaults dele
+  function pickTpl(k: string) {
+    const t = templateByKey(k);
+    setTplKey(k); setCoverIdx(0); setCustomCover('');
+    setName((prev) => (prev === tpl.theme.headline || !prev ? t.theme.headline : prev));
+    const pi = PALETTES.findIndex((p) => p.primary.toLowerCase() === t.theme.primary.toLowerCase());
+    setPalIdx(pi >= 0 ? pi : 0);
+  }
+
+  const startsAt = toISO(date, start);
+  const endsAt = toISO(date, end, start);
+  const slug = slugify(`${venueName}-${name}`) || 'evento';
+  const model: PreviewModel = { theme, name, venueName: venueName || 'Seu bar', type: tpl.type, description: tpl.theme.subcopy, startsAt, endsAt, mm: tpl.matchmaker, rewards: tpl.rewards, venue: { address } };
+
+  async function publish() {
+    setErr('');
+    if (!venueName.trim()) return setErr('Diga o nome do seu bar/local.');
+    if (!name.trim()) return setErr('Dê um nome ao evento.');
+    if (!startsAt || !endsAt) return setErr('Confira data e horário.');
+    setBusy(true);
+    try {
+      const r = await studioApi.createEvent(adminKey, {
+        venue: { name: venueName, address, map_url: mapUrl, cover_url: cover, primary_color: pal.primary, secondary_color: pal.secondary, button_color: pal.button },
+        event: { name, type: tpl.type, description: tpl.theme.subcopy, slug, starts_at: startsAt, ends_at: endsAt, status: 'active', theme, matchmaker: tpl.matchmaker },
+        rewards: tpl.rewards,
+      });
+      setPub({ slug: r.slug, code: r.public_code });
+    } catch (e: any) { setErr('Não foi possível publicar: ' + (e?.message || '')); }
+    finally { setBusy(false); }
+  }
+
+  if (pub) return <Published slug={pub.slug} code={pub.code} theme={theme} name={name} />;
+
+  return (
+    <main className="px-4 pb-28 pt-5">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-black">⚡ Criar rápido</h1>
+        <button onClick={onFull} className="text-xs font-semibold text-glow2">Modo completo →</button>
+      </div>
+
+      {/* preview ao vivo */}
+      <div className="mt-3 rounded-3xl border border-line bg-ink2/60 p-3">
+        <Preview m={model} surface="event" />
+      </div>
+
+      <div className="mt-4 space-y-4">
+        <div>
+          <label className="label">1 · Tipo de evento</label>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {TEMPLATES.map((t) => (
+              <button key={t.key} onClick={() => pickTpl(t.key)}
+                className={`shrink-0 rounded-2xl border px-3 py-2 text-sm font-bold ${tplKey === t.key ? 'border-glow2 bg-glow2/15' : 'border-line bg-card'}`}>
+                <span className="mr-1">{t.emoji}</span>{t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Field label="2 · Nome do evento"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></Field>
+        <Field label="3 · Seu bar / local"><input className="input" value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Ex.: Laicos" /></Field>
+        <div>
+          <label className="label">Endereço (busca automática)</label>
+          <AddressSearch value={address} onPick={(r) => { setAddress(r.address); setMapUrl(r.mapUrl); if (!venueName.trim() && r.name) setVenueName(r.name); }} />
+        </div>
+
+        <Field label="4 · Data"><input type="date" className="input" value={date} onChange={(e) => setDate(e.target.value)} /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Início"><input type="time" className="input" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
+          <Field label="Fim"><input type="time" className="input" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+        </div>
+
+        <div>
+          <label className="label">5 · Capa</label>
+          <div className="grid grid-cols-3 gap-2">
+            {covers.map((c, i) => (
+              <button key={c} onClick={() => { setCustomCover(''); setCoverIdx(i); }}
+                className={`relative h-16 overflow-hidden rounded-xl border-2 ${!customCover && coverIdx === i ? 'border-glow2' : 'border-transparent'}`}>
+                <img src={c} className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+          <input className="input mt-2 text-xs" value={customCover} onChange={(e) => setCustomCover(e.target.value)} placeholder="ou cole a URL da sua foto" autoCapitalize="none" />
+        </div>
+
+        <div>
+          <label className="label">6 · Paleta de cores</label>
+          <div className="flex flex-wrap gap-2">
+            {PALETTES.map((p, i) => (
+              <button key={p.name} onClick={() => setPalIdx(i)} title={p.name}
+                className={`flex items-center gap-1 rounded-full border px-2 py-1.5 ${palIdx === i ? 'border-white' : 'border-line'}`}>
+                <span className="h-4 w-4 rounded-full" style={{ background: p.primary }} />
+                <span className="h-4 w-4 rounded-full" style={{ background: p.secondary }} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {err && <p className="rounded-xl border border-glow/50 bg-glow/15 px-3 py-2 text-sm font-semibold text-white">{err}</p>}
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-20">
+        <div className="mx-auto max-w-[480px] border-t border-line bg-ink/90 px-4 py-3 backdrop-blur">
+          <button onClick={publish} disabled={busy} className="btn w-full py-4 text-lg font-bold shadow-neon" style={{ background: theme.button, color: readableText(theme.button) }}>{busy ? 'Publicando…' : '🚀 Publicar agora'}</button>
+        </div>
+      </div>
+    </main>
   );
 }
 
 // ---------- PUBLISHED (QR + link) ----------
 function Published({ slug, code, theme, name }: { slug: string; code: string; theme: Theme; name: string }) {
   const [qr, setQr] = useState('');
+  const [copied, setCopied] = useState(false);
   const origin = typeof window !== 'undefined' ? location.origin : '';
   const link = `${origin}/e/${slug}`;
-  useEffect(() => { QRCode.toDataURL(link, { width: 360, margin: 1, color: { dark: '#0a0710', light: '#ffffff' } }).then(setQr); }, [link]);
+  const msg = `${theme.emoji} ${theme.headline || name} — tá rolando! Entra no matchmaker e dá match: ${link}`;
+  const canShare = typeof navigator !== 'undefined' && !!(navigator as any).share;
+  useEffect(() => { QRCode.toDataURL(link, { width: 520, margin: 1, color: { dark: '#0a0710', light: '#ffffff' } }).then(setQr); }, [link]);
+  function copy() { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+  async function share() { try { await (navigator as any).share({ title: theme.headline || name, text: msg, url: link }); } catch {} }
+
   return (
-    <main className="px-6 pb-16 pt-12 text-center">
-      <div className="text-5xl">🎉</div>
-      <h1 className="mt-3 text-2xl font-black">Evento no ar!</h1>
+    <main className="px-6 pb-16 pt-10 text-center">
+      <div className="animate-pop text-6xl">🎉</div>
+      <div className="mt-2 text-xs font-black uppercase tracking-widest" style={{ color: theme.primary }}>Publicado</div>
+      <h1 className="mt-1 text-3xl font-black">Seu evento está no ar!</h1>
       <p className="mt-1 text-sm text-muted">{theme.emoji} {theme.headline || name}</p>
-      {qr && <img src={qr} alt="QR" className="mx-auto mt-6 w-56 rounded-2xl" />}
-      <a href={qr} download={`qr-${slug}.png`} className="mt-2 inline-block text-xs font-bold text-glow2">baixar QR Code</a>
-      <div className="mt-5 rounded-2xl border border-line bg-card p-3 text-left">
-        <div className="text-xs text-muted">Link do evento</div>
-        <div className="truncate text-sm font-bold text-glow2">{link}</div>
+
+      {/* QR grande em cartão temado */}
+      <div className="mx-auto mt-6 w-full max-w-xs rounded-3xl p-5" style={{ background: theme.primary + '14', border: `1px solid ${theme.primary}55` }}>
+        {qr && <img src={qr} alt="QR" className="mx-auto w-full rounded-2xl bg-white p-2" />}
+        <div className="mt-3 text-sm font-bold" style={{ color: theme.primary }}>Aponte a câmera · cai direto no matchmaker</div>
+        <a href={qr} download={`qr-${slug}.png`} className="mt-1 inline-block text-xs font-bold text-muted">⬇ baixar QR (impressão)</a>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button onClick={() => navigator.clipboard.writeText(link)} className="btn border border-line bg-card py-3 text-white">Copiar link</button>
-        <a href={link} className="btn py-3 font-bold text-white" style={{ background: theme.button }}>Abrir landing</a>
+
+      <div className="mt-5 flex items-center gap-2 rounded-2xl border border-line bg-card p-3 text-left">
+        <div className="min-w-0 flex-1"><div className="text-[11px] text-muted">Link do evento</div><div className="truncate text-sm font-bold" style={{ color: theme.primary }}>{link}</div></div>
+        <button onClick={copy} className="shrink-0 rounded-full border border-line px-3 py-1.5 text-xs font-bold text-white">{copied ? '✓ copiado' : 'copiar'}</button>
       </div>
-      <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-        <a href={`https://wa.me/?text=${encodeURIComponent(`${theme.headline || name} 🔥 entra no matchmaker: ${link}`)}`} target="_blank" className="btn border border-line bg-card py-2.5 text-white">WhatsApp</a>
-        <a href="/admin" className="btn border border-line bg-card py-2.5 text-white">Ir pro painel</a>
+
+      {/* ações principais */}
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        {canShare
+          ? <button onClick={share} className="btn col-span-2 py-3.5 text-lg font-bold shadow-neon" style={{ background: theme.button, color: readableText(theme.button) }}>📲 Compartilhar</button>
+          : <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" className="btn col-span-2 py-3.5 text-lg font-bold shadow-neon" style={{ background: theme.button, color: readableText(theme.button) }}>📲 Compartilhar no WhatsApp</a>}
+        <a href={link} className="btn border border-line bg-card py-3 font-bold text-white">Abrir evento</a>
+        <a href="/admin" className="btn border border-line bg-card py-3 font-bold text-white">Ver dashboard</a>
       </div>
-      <p className="mt-4 text-xs text-muted">Código curto: <code className="rounded bg-ink2 px-1.5 py-0.5">{code}</code></p>
+
+      {/* canais de divulgação */}
+      <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+        <a href={`https://wa.me/?text=${encodeURIComponent(msg)}`} target="_blank" className="btn border border-line bg-card py-2.5 text-white">WhatsApp</a>
+        <button onClick={copy} className="btn border border-line bg-card py-2.5 text-white">{copied ? '✓' : 'Stories/IG'}</button>
+        <a href={qr} download={`qr-${slug}.png`} className="btn border border-line bg-card py-2.5 text-white">QR impresso</a>
+      </div>
+      {!canShare && <p className="mt-2 text-[11px] text-muted">Stories/IG: copie o link e cole no seu story, ou use o QR.</p>}
+
+      <p className="mt-5 text-xs text-muted">Código curto: <code className="rounded bg-ink2 px-1.5 py-0.5">{code}</code></p>
     </main>
   );
 }

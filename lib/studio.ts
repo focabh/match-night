@@ -206,6 +206,57 @@ export const TEMPLATES: Template[] = [
 
 export const templateByKey = (k: string) => TEMPLATES.find((t) => t.key === k) || TEMPLATES[0];
 
+// ---------- PALETAS CURADAS (contraste seguro) ----------
+export type Palette = { name: string; primary: string; secondary: string; button: string };
+export const PALETTES: Palette[] = [
+  { name: 'Neon Rosa', primary: '#ff3d7f', secondary: '#7b5cff', button: '#ff3d7f' },
+  { name: 'Sunset', primary: '#ff6b35', secondary: '#ffb547', button: '#ff6b35' },
+  { name: 'Roxo', primary: '#a855f7', secondary: '#ec4899', button: '#a855f7' },
+  { name: 'Rubi', primary: '#ef4444', secondary: '#f59e0b', button: '#ef4444' },
+  { name: 'Aqua', primary: '#2dd4bf', secondary: '#3b82f6', button: '#0ea5e9' },
+  { name: 'Champagne', primary: '#E8B339', secondary: '#232a6b', button: '#d6336c' },
+  { name: 'Esmeralda', primary: '#10b981', secondary: '#0ea5e9', button: '#10b981' },
+];
+
+// galeria de capas curadas por template (evita "foto ruim" no modo rápido)
+const POOL = {
+  party: [
+    'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900&q=70',
+    'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=900&q=70',
+    'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900&q=70',
+  ],
+  drinks: [
+    'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=900&q=70',
+    'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900&q=70',
+    'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=900&q=70',
+  ],
+  music: [
+    'https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=900&q=70',
+    'https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=900&q=70',
+    'https://images.unsplash.com/photo-1493676304819-0d7a8d026dcf?w=900&q=70',
+  ],
+  pro: [
+    'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=900&q=70',
+    'https://images.unsplash.com/photo-1511795409834-ef04bbd61622?w=900&q=70',
+    'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=900&q=70',
+  ],
+};
+export const COVERS: Record<string, string[]> = {
+  singles: POOL.party, happyhour: POOL.drinks, networking: POOL.pro,
+  karaoke: POOL.music, rock: POOL.music, tematica: POOL.party, speed: POOL.drinks,
+};
+export const coversFor = (key: string) => COVERS[key] || POOL.party;
+
+// cor de texto legível sobre uma cor (luminância) -> garante contraste do botão
+export function readableText(hex: string): string {
+  const h = (hex || '#000').replace('#', '');
+  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const r = parseInt(n.slice(0, 2), 16) / 255, g = parseInt(n.slice(2, 4), 16) / 255, b = parseInt(n.slice(4, 6), 16) / 255;
+  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return L > 0.45 ? '#0a0710' : '#ffffff';
+}
+
 // fallback de tema p/ eventos sem theme (compat com eventos antigos)
 export const DEFAULT_THEME: Theme = { ...TEMPLATES[0].theme, logo_url: '' };
 

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { getUserId } from '@/lib/session';
-import { themeOf } from '@/lib/studio';
+import { themeOf, readableText } from '@/lib/studio';
 import type { EventPublic } from '@/lib/types';
 import { EventEnded } from '@/components/States';
 
@@ -120,14 +120,19 @@ export default function EventLanding() {
             {t.rules.filter(Boolean).map((r, i) => <div key={i}>· {r}</div>)}
           </div>
         )}
+
+        {/* assinatura do produto — identidade SEMPRE presente (não some atrás do tema da casa) */}
+        <div className="mt-8 flex items-center justify-center gap-1.5 text-[11px] font-bold text-white/40">
+          <span style={{ color: '#ff3d7f' }}>✦</span> Match Night · matchmaker ao vivo
+        </div>
       </div>
 
       {/* CTA fixo */}
       <div className="fixed inset-x-0 bottom-0 z-20">
         <div className="mx-auto max-w-md px-5 py-4" style={{ background: 'linear-gradient(to top, #0a0710 70%, transparent)' }}>
           <button onClick={enter} disabled={busy}
-            className="w-full rounded-full py-4 text-lg font-bold text-white transition active:scale-95 disabled:opacity-60"
-            style={{ background: confirmed ? t.button : hexA(t.button, .6), boxShadow: `0 12px 36px -10px ${hexA(t.button, .7)}` }}>
+            className="w-full rounded-full py-4 text-lg font-bold transition active:scale-95 disabled:opacity-60"
+            style={{ background: confirmed ? t.button : hexA(t.button, .6), color: readableText(t.button), boxShadow: `0 12px 36px -10px ${hexA(t.button, .7)}` }}>
             {busy ? 'Entrando…' : (t.cta_label || 'Entrar no Matchmaker')}
           </button>
           <p className="mt-2 text-center text-[11px] text-white/45">+18 · só nesta noite</p>
