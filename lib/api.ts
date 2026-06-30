@@ -46,6 +46,18 @@ export const api = {
     rpc<void>('mn_leave_event', { p_event_id: eventId, p_user_id: userId }),
 };
 
+// ---- Studio (criador de evento personalizado; gated por admin key) ----
+export const studioApi = {
+  listVenues: (key: string) => rpc<any[]>('mn_studio_list_venues', { p_key: key }),
+  upsertVenue: (key: string, venue: Record<string, any>) =>
+    rpc<any>('mn_studio_upsert_venue', { p_key: key, p: venue }),
+  createEvent: (key: string, payload: Record<string, any>) =>
+    rpc<{ event_id: string; public_code: string; slug: string }>('mn_studio_create_event', { p_key: key, p: payload }),
+  updateEvent: (key: string, eventId: string, payload: Record<string, any>) =>
+    rpc<{ ok: boolean }>('mn_studio_update_event', { p_key: key, p_event_id: eventId, p: payload }),
+  publicList: () => rpc<any[]>('mn_events_public_list', {}),
+};
+
 // ---- Admin (chave compartilhada no MVP) ----
 export const adminApi = {
   list: (key: string) => rpc<any[]>('mn_admin_list_events', { p_key: key }),

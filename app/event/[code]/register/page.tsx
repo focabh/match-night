@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { supabase } from '@/lib/supabaseClient';
 import { getUserId, loadProfile, saveProfile } from '@/lib/session';
 import { GENDERS, INTERESTS, INTENTIONS, PROMPTS, type EventPublic, type ProfileInput } from '@/lib/types';
+import { themeOf } from '@/lib/studio';
 import { EventEnded } from '@/components/States';
 
 const ERRORS: Record<string, string> = {
@@ -125,7 +126,7 @@ export default function Register() {
       </div>
 
       <button disabled={busy} onClick={submit}
-        className="btn mt-6 w-full bg-glow py-4 text-white text-lg shadow-neon">
+        className="btn mt-6 w-full py-4 text-white text-lg shadow-neon" style={{ background: themeOf(ev).button }}>
         {busy ? 'Entrando…' : 'Entrar na noite'}
       </button>
       <p className="mt-3 text-center text-xs text-muted">Seu perfil vale só nesta noite. Acabou o evento, some tudo.</p>

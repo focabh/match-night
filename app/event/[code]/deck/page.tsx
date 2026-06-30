@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { api } from '@/lib/api';
 import { getUserId } from '@/lib/session';
+import { themeOf } from '@/lib/studio';
 import type { DeckPerson, EventPublic } from '@/lib/types';
 import { ProfileCard } from '@/components/ProfileCard';
 import { EventEnded, EmptyDeck, LeftEvent } from '@/components/States';
@@ -35,6 +36,7 @@ export default function Deck() {
   if (!ev || people === null) return <Splash />;
 
   const person = people[i];
+  const t = themeOf(ev);
 
   async function act(action: 'like' | 'pass', who: DeckPerson) {
     if (busy) return; setBusy(true);
@@ -57,7 +59,7 @@ export default function Deck() {
     <main className="flex min-h-[100dvh] flex-col">
       <header className="flex items-center justify-between px-5 pt-5">
         <div className="min-w-0">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-glow">Ao vivo neste evento</div>
+          <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: t.primary }}>Ao vivo neste evento</div>
           <div className="truncate font-black">{ev.name}</div>
         </div>
         <div className="flex items-center gap-2">
@@ -92,25 +94,25 @@ export default function Deck() {
       {person && (
         <footer className="flex items-center justify-center gap-6 px-5 pb-8">
           <button onClick={() => fling('pass')} disabled={busy} className="btn h-16 w-16 grid place-items-center bg-card border border-line text-2xl">✕</button>
-          <button onClick={() => fling('like')} disabled={busy} className="btn h-20 w-20 grid place-items-center bg-glow text-3xl shadow-neon">❤</button>
+          <button onClick={() => fling('like')} disabled={busy} className="btn h-20 w-20 grid place-items-center text-3xl shadow-neon" style={{ background: t.button }}>❤</button>
         </footer>
       )}
 
-      {match && <MatchModal p={match} onChat={() => router.push(`/event/${code}/matches`)} onClose={() => setMatch(null)} />}
+      {match && <MatchModal p={match} accent={t.button} primary={t.primary} onChat={() => router.push(`/event/${code}/matches`)} onClose={() => setMatch(null)} />}
     </main>
   );
 }
 
 function Splash() { return <main className="flex min-h-[100dvh] items-center justify-center text-muted">Carregando a noite…</main>; }
 
-function MatchModal({ p, onChat, onClose }: { p: DeckPerson; onChat: () => void; onClose: () => void }) {
+function MatchModal({ p, onChat, onClose, accent = '#ff3d7f', primary = '#ff3d7f' }: { p: DeckPerson; onChat: () => void; onClose: () => void; accent?: string; primary?: string }) {
   return (
     <div className="fixed inset-0 z-40 bg-black/80 backdrop-blur flex items-center justify-center px-6">
       <div className="animate-pop text-center w-full max-w-xs">
-        <div className="text-sm font-black uppercase tracking-widest text-glow">Deu match na casa</div>
+        <div className="text-sm font-black uppercase tracking-widest" style={{ color: primary }}>Deu match na casa</div>
         <h2 className="mt-2 text-3xl font-black break-words">Você e {p.display_name} se curtiram 🔥</h2>
-        <img src={p.photo_url} alt="" className="mx-auto mt-6 h-28 w-28 rounded-full object-cover border-4 border-glow shadow-neon" />
-        <button onClick={onChat} className="btn mt-8 w-full bg-glow py-4 text-white text-lg shadow-neon">Ver meus matches</button>
+        <img src={p.photo_url} alt="" className="mx-auto mt-6 h-28 w-28 rounded-full object-cover border-4 shadow-neon" style={{ borderColor: accent }} />
+        <button onClick={onChat} className="btn mt-8 w-full py-4 text-white text-lg shadow-neon" style={{ background: accent }}>Ver meus matches</button>
         <button onClick={onClose} className="btn mt-2 w-full py-3 text-muted">Continuar</button>
       </div>
     </div>

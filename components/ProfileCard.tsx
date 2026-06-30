@@ -46,7 +46,7 @@ export function ProfileCard({ p, onReport, onBlock }: {
 
       {menu && (
         <div className="absolute inset-0 z-30 bg-black/70 flex items-end" onClick={() => setMenu(false)}>
-          <div className="shell w-full rounded-t-3xl bg-card border-t border-line p-4 space-y-2" onClick={(e) => e.stopPropagation()}>
+          <div className="mx-auto w-full max-w-[480px] rounded-t-3xl bg-card border-t border-line p-4 space-y-2" onClick={(e) => e.stopPropagation()}>
             <button onClick={() => { setMenu(false); onReport?.(); }} className="btn w-full bg-ink2 py-3 text-amber">🚩 Denunciar</button>
             <button onClick={() => { setMenu(false); onBlock?.(); }} className="btn w-full bg-ink2 py-3 text-glow">🚫 Bloquear</button>
             <button onClick={() => setMenu(false)} className="btn w-full py-3 text-muted">Cancelar</button>

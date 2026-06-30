@@ -9,6 +9,14 @@ export type EventPublic = {
   is_live: boolean;
   is_demo: boolean;
   ended: boolean;
+  // studio (opcionais — eventos antigos não têm)
+  public_code?: string;
+  slug?: string | null;
+  type?: string | null;
+  theme?: Record<string, any>;
+  matchmaker?: Record<string, any>;
+  venue?: Record<string, any> | null;
+  rewards?: any[];
 };
 
 export type DeckPerson = {
