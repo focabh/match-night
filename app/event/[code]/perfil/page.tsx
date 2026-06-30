@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { getUserId } from '@/lib/session';
 import { INTENTIONS, PROMPTS, type EventPublic } from '@/lib/types';
 import { themeOf } from '@/lib/studio';
+import { EventTabs } from '@/components/EventTabs';
 import { EventEnded } from '@/components/States';
 
 export default function Perfil() {
@@ -42,9 +43,10 @@ export default function Perfil() {
   }
 
   return (
-    <main className="px-5 py-8 pb-28">
-      <button onClick={() => router.push(`/event/${code}/deck`)} className="text-sm text-muted">← voltar</button>
-      <h1 className="mt-3 text-2xl font-black">Meu perfil</h1>
+    <main className="pb-28">
+      <EventTabs code={code} active="perfil" theme={t} />
+      <div className="px-5 pt-5">
+      <h1 className="text-2xl font-black">Meu perfil</h1>
       <p className="mt-1 text-sm text-muted">Tudo opcional — mas foto e nome dão muito mais match.</p>
 
       {/* ver como os outros me veem */}
@@ -98,6 +100,7 @@ export default function Perfil() {
       </div>
 
       {err && <p className="mt-4 rounded-2xl border border-glow/50 bg-glow/15 px-4 py-3 text-sm font-semibold text-white">{err}</p>}
+      </div>
       <div className="fixed inset-x-0 bottom-0 z-20">
         <div className="mx-auto max-w-[480px] border-t border-line bg-ink/90 px-5 py-4 backdrop-blur">
           <button onClick={save} disabled={busy} className="btn w-full py-4 text-lg font-bold" style={{ background: t.button, color: '#fff' }}>{busy ? 'Salvando…' : 'Salvar e voltar'}</button>

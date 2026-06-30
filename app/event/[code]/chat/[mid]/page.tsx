@@ -79,7 +79,8 @@ export default function Chat() {
           ? <img src={other.photo_url} className="h-9 w-9 rounded-full object-cover" />
           : <div className="grid h-9 w-9 place-items-center rounded-full bg-ink2 text-sm">{name.charAt(0)}</div>}
         <div className="min-w-0 flex-1"><div className="truncate font-black leading-tight">{name}{other?.age ? `, ${other.age}` : ''}</div><div className="text-[11px]" style={{ color: t.primary }}>🟢 aqui agora</div></div>
-        <button onClick={() => setMenu(true)} className="h-9 w-9 grid place-items-center rounded-full bg-card border border-line">•••</button>
+        <button onClick={() => router.push(`/event/${code}/deck`)} aria-label="Descobrir" className="h-9 w-9 grid place-items-center rounded-full bg-card border border-line text-sm">🔥</button>
+        <button onClick={() => setMenu(true)} aria-label="Opções" className="h-9 w-9 grid place-items-center rounded-full bg-card border border-line">•••</button>
       </header>
 
       {/* revelação pós-match */}

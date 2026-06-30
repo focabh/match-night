@@ -8,6 +8,7 @@ import { getUserId, loadOnboard, saveOnboard } from '@/lib/session';
 import { themeOf } from '@/lib/studio';
 import { GENDER_OPTS, PREF_OPTS, PREF_ALL, normalizePrefs, expandPrefs, type DeckPerson, type EventPublic } from '@/lib/types';
 import { ProfileCard } from '@/components/ProfileCard';
+import { EventTabs } from '@/components/EventTabs';
 import { EventEnded, EmptyDeck, LeftEvent } from '@/components/States';
 
 type Undo = { target: string; prevI: number; isSuper: boolean; label: string };
@@ -102,17 +103,9 @@ export default function Deck() {
 
   return (
     <main className="flex min-h-[100dvh] flex-col">
-      <header className="flex items-center justify-between px-5 pt-5">
-        <div className="min-w-0">
-          <div className="text-[11px] font-bold uppercase tracking-wide" style={{ color: t.primary }}>Ao vivo neste evento</div>
-          <div className="truncate font-black">{ev.name}</div>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <button onClick={() => router.push(`/event/${code}/perfil`)} aria-label="Meu perfil" className="btn h-9 w-9 grid place-items-center bg-card border border-line text-sm">🙂</button>
-          <button onClick={() => setShowPrefs(true)} aria-label="Alterar preferências" className="btn h-9 w-9 grid place-items-center bg-card border border-line text-sm">⚙️</button>
-          <button onClick={() => router.push(`/event/${code}/matches`)} className="btn bg-card border border-line px-3 py-2 text-sm">💜 Matches</button>
-        </div>
-      </header>
+      <EventTabs code={code} active="deck" theme={t}
+        right={<button onClick={() => setShowPrefs(true)} aria-label="Alterar preferências" className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card border border-line text-sm">⚙️</button>} />
+      <div className="px-5 pt-3 text-[11px] font-bold uppercase tracking-wide" style={{ color: t.primary }}>● {ev.name}</div>
 
       {nudge && (
         <button onClick={() => router.push(`/event/${code}/perfil`)}

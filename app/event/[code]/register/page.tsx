@@ -112,7 +112,8 @@ export default function Onboarding() {
   );
 
   return (
-    <main className="px-6 pt-10 pb-28" style={{ minHeight: '100dvh' }}>
+    <main className="px-6 pt-8 pb-28" style={{ minHeight: '100dvh' }}>
+      <button onClick={() => router.back()} className="mb-3 text-sm text-muted">← voltar</button>
       <div className="text-xs font-bold uppercase tracking-wide" style={{ color: t.primary }}>{ev?.name || 'Matchmaker'}</div>
       <div className="mt-4">
         {variant.order === 'about-first' ? <>{About}{Pref}</> : <>{Pref}{About}</>}
