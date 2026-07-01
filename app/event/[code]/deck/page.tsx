@@ -29,6 +29,7 @@ export default function Deck() {
   const [state, setState] = useState<{ super_likes_left: number; has_photo: boolean; my_photo?: string; active: number } | null>(null);
   const [undo, setUndo] = useState<Undo | null>(null);
   const [photoPrompt, setPhotoPrompt] = useState<null | { name: string }>(null);
+  const [openProfile, setOpenProfile] = useState<DeckPerson | null>(null);
   const undoTimer = useRef<any>(null);
   const once = useRef<Record<string, boolean>>({});
 
@@ -80,8 +81,8 @@ export default function Deck() {
         setUndo({ target: who.participant_id, prevI, isSuper: action === 'superlike', label: action === 'pass' ? `Passou ${who.display_name}` : `Curtiu ${who.display_name}` });
         undoTimer.current = setTimeout(() => setUndo(null), 5000);
       }
-      // foto no 1º like (pulável)
-      if (action !== 'pass' && state && !state.has_photo && !once.current.photoAsk) {
+      // foto no 1º like (pulável) — não atrapalha a celebração de match
+      if (action !== 'pass' && !r.matched && state && !state.has_photo && !once.current.photoAsk) {
         once.current.photoAsk = true; setPhotoPrompt({ name: who.display_name });
       }
     } catch (e: any) {
@@ -124,7 +125,7 @@ export default function Deck() {
             <motion.div className="absolute inset-0" style={{ x, rotate: rot }}
               drag="x" dragConstraints={{ left: 0, right: 0 }}
               onDragEnd={(_, info) => { if (info.offset.x > 120) fling('like'); else if (info.offset.x < -120) fling('pass'); else animate(x, 0, { type: 'spring', stiffness: 300, damping: 25 }); }}>
-              <ProfileCard p={person}
+              <ProfileCard p={person} onOpen={() => { track('profile_open'); setOpenProfile(person); }}
                 onReport={async () => { await api.report(ev.event_id, uid, person.participant_id, 'inapropriado').catch(() => {}); track('report'); setI((v) => v + 1); }}
                 onBlock={async () => { await api.block(ev.event_id, uid, person.participant_id).catch(() => {}); track('block'); setI((v) => v + 1); }} />
               <motion.div style={{ opacity: likeOp }} className="pointer-events-none absolute top-8 left-6 rotate-[-12deg] rounded-xl border-4 border-glow px-3 py-1 text-2xl font-black text-glow">CURTI</motion.div>
@@ -158,6 +159,8 @@ export default function Deck() {
         onChat={(find) => router.push(`/event/${code}/chat/${match.matchId}${find ? '?find=1' : ''}`)}
         onClose={() => setMatch(null)} />}
       {showPrefs && <PrefsSheet eventId={ev.event_id} theme={t} onClose={() => setShowPrefs(false)} onSaved={() => { setShowPrefs(false); setI(0); load(); track('prefs_changed'); }} />}
+      {openProfile && <ProfileSheet p={openProfile} theme={t} onClose={() => setOpenProfile(null)}
+        onAct={(a) => { const who = openProfile; setOpenProfile(null); act(a, who); }} />}
       {photoPrompt && <PhotoPrompt name={photoPrompt.name} theme={t} eventId={ev.event_id}
         onDone={() => { setState((s) => s ? { ...s, has_photo: true } : s); localStorage.setItem(`mn_hasphoto`, '1'); track('photo_added', { at: 'first_like' }); setPhotoPrompt(null); }}
         onSkip={() => setPhotoPrompt(null)} />}
@@ -166,6 +169,45 @@ export default function Deck() {
 }
 
 function Splash() { return <main className="flex min-h-[100dvh] items-center justify-center text-muted">Carregando a noite…</main>; }
+
+// Perfil ao tocar na pessoa (deck): fotos + nome/idade/intenção + ações.
+// Revelação pós-match: bio/redes NÃO aparecem aqui (só depois do match).
+function ProfileSheet({ p, theme, onClose, onAct }: { p: DeckPerson; theme: any; onClose: () => void; onAct: (a: 'like' | 'pass' | 'superlike') => void }) {
+  const photos = ((p.photos && p.photos.length ? p.photos : [p.photo_url]).filter(Boolean)) as string[];
+  const [i, setI] = useState(0);
+  const cur = photos[Math.min(i, photos.length - 1)] || p.photo_url;
+  return (
+    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur flex items-end sm:items-center justify-center" onClick={onClose}>
+      <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-ink2 border-t border-line" onClick={(e) => e.stopPropagation()}>
+        <div className="relative aspect-[4/5] w-full bg-card">
+          {cur ? <img src={cur} alt="" className="absolute inset-0 h-full w-full object-cover" />
+               : <div className="absolute inset-0 grid place-items-center text-7xl text-white" style={{ background: 'radial-gradient(120% 90% at 50% 0%,#3a2e8c,#1b1326)' }}>{(p.display_name || '🙂').charAt(0).toUpperCase()}</div>}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
+          {photos.length > 1 && (
+            <>
+              <div className="absolute inset-x-3 top-2 flex gap-1">{photos.map((_, k) => <div key={k} className="h-1 flex-1 rounded-full" style={{ background: k === i ? '#fff' : 'rgba(255,255,255,.35)' }} />)}</div>
+              <button className="absolute left-0 top-0 h-full w-1/3" onClick={() => setI((v) => Math.max(0, v - 1))} aria-label="anterior" />
+              <button className="absolute right-0 top-0 h-full w-1/3" onClick={() => setI((v) => Math.min(photos.length - 1, v + 1))} aria-label="próxima" />
+            </>
+          )}
+          <button onClick={onClose} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white backdrop-blur">✕</button>
+          <div className="absolute inset-x-0 bottom-0 p-5">
+            <div className="flex items-end gap-2"><h2 className="text-3xl font-black">{p.display_name}</h2>{p.age ? <span className="text-2xl font-bold text-white/80">{p.age}</span> : null}</div>
+            {p.night_intention && <div className="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold" style={{ background: theme.primary + '33', color: '#fff' }}>{p.night_intention}</div>}
+          </div>
+        </div>
+        <div className="p-4">
+          <p className="text-sm text-white/70">🔓 Bio, prompts e redes aparecem quando vocês derem match.</p>
+          <div className="mt-4 flex items-center justify-center gap-5">
+            <button onClick={() => onAct('pass')} className="btn h-14 w-14 grid place-items-center bg-card border border-line text-xl">✕</button>
+            <button onClick={() => onAct('superlike')} className="btn h-12 w-12 grid place-items-center rounded-full text-lg" style={{ background: theme.secondary + '26', color: theme.secondary, border: `1px solid ${theme.secondary}` }}>⭐</button>
+            <button onClick={() => onAct('like')} className="btn h-16 w-16 grid place-items-center text-2xl text-white shadow-neon" style={{ background: theme.button }}>❤</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // ---- Foto no 1º like (pulável; o like já foi registrado) ----
 function PhotoPrompt({ name, theme, eventId, onDone, onSkip }: { name: string; theme: any; eventId: string; onDone: () => void; onSkip: () => void }) {

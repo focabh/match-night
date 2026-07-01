@@ -35,7 +35,7 @@ export default function Chat() {
       const ms = await api.matches(e.event_id, uid).catch(() => [] as MatchRow[]);
       setOther(ms.find((m) => m.match_id === mid) || null);
       await refresh(e.event_id);
-      timer = setInterval(() => refresh(e.event_id), 3000);
+      timer = setInterval(() => refresh(e.event_id), 2000);
     })();
     return () => clearInterval(timer);
   }, [code, uid, mid, refresh]);

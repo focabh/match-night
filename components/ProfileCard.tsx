@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import type { DeckPerson } from '@/lib/types';
 
-export function ProfileCard({ p, onReport, onBlock }: {
-  p: DeckPerson; onReport?: () => void; onBlock?: () => void;
+export function ProfileCard({ p, onReport, onBlock, onOpen }: {
+  p: DeckPerson; onReport?: () => void; onBlock?: () => void; onOpen?: () => void;
 }) {
   const photos = ((p.photos && p.photos.length ? p.photos : [p.photo_url]).filter(Boolean)) as string[];
   const [idx, setIdx] = useState(0);
@@ -46,16 +46,18 @@ export function ProfileCard({ p, onReport, onBlock }: {
       <div className="absolute top-3 left-3 z-20 rounded-full bg-black/50 backdrop-blur px-3 py-1 text-xs font-bold text-glow">🟢 aqui agora</div>
       <button onClick={() => setMenu(true)} className="absolute top-3 right-3 z-20 h-9 w-9 grid place-items-center rounded-full bg-black/50 backdrop-blur text-white">⋯</button>
 
-      <div className="absolute inset-x-0 bottom-0 z-20 p-5">
+      <button type="button" onClick={(e) => { e.stopPropagation(); onOpen?.(); }}
+        className="absolute inset-x-0 bottom-0 z-20 p-5 text-left">
         <div className="flex items-end gap-2">
-          <h2 className="text-3xl font-black leading-none">{p.display_name}{p.age ? '' : ''}</h2>
+          <h2 className="text-3xl font-black leading-none">{p.display_name}</h2>
           {p.age ? <span className="text-2xl font-bold text-white/80">{p.age}</span> : null}
+          {onOpen && <span className="ml-1 mb-0.5 grid h-6 w-6 place-items-center rounded-full bg-white/15 text-sm backdrop-blur">ⓘ</span>}
         </div>
         {p.night_intention && <div className="mt-2 inline-flex rounded-full bg-glow/20 border border-glow/40 px-3 py-1 text-xs font-bold text-glow">{p.night_intention}</div>}
-        {/* revelação pós-match: bio, prompts e redes NÃO aparecem no deck */}
         {hasSocial && <p className="mt-3 text-[11px] text-white/45">🔓 perfil e redes liberam no match</p>}
-        {photos.length > 1 && <p className="mt-2 text-[11px] text-white/45">toque pra ver mais fotos · {i + 1}/{photos.length}</p>}
-      </div>
+        {photos.length > 1 && <p className="mt-2 text-[11px] text-white/45">toque nas laterais pra ver fotos · {i + 1}/{photos.length}</p>}
+        {onOpen && <p className="mt-1 text-[11px] font-semibold text-white/60">toque no nome pra ver o perfil</p>}
+      </button>
 
       {menu && (
         <div className="absolute inset-0 z-30 bg-black/70 flex items-end" onClick={() => setMenu(false)}>
