@@ -49,8 +49,11 @@ export default function Deck() {
 
   useEffect(() => {
     if (ev?.event_id && people && people.length && !once.current.card) { once.current.card = true; api.track(ev.event_id, uid, 'first_card'); }
-    if (typeof window !== 'undefined' && !localStorage.getItem(`mn_done_${code}`)) setNudge(true);
-  }, [ev, people, uid, code]);
+    // só sugere completar perfil pra quem ainda NÃO tem foto (perfil é reaproveitado entre eventos)
+    if (typeof window !== 'undefined' && state) {
+      setNudge(!state.has_photo && !localStorage.getItem(`mn_done_${code}`));
+    }
+  }, [ev, people, uid, code, state]);
 
   function track(step: string, meta?: Record<string, unknown>) { if (ev) api.track(ev.event_id, uid, step, undefined, meta); }
 
