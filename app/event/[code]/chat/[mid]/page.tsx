@@ -25,7 +25,11 @@ export default function Chat() {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const refresh = useCallback(async (eid: string) => {
-    setMsgs(await api.messages(eid, uid, mid).catch(() => []));
+    const list: Message[] = await api.messages(eid, uid, mid).catch(() => []);
+    setMsgs(list);
+    // marca como lida usando o tempo do SERVIDOR (consistente com o badge)
+    const maxAt = list.reduce((mx, m) => Math.max(mx, Date.parse(m.created_at) || 0), 0);
+    try { if (maxAt) localStorage.setItem(`mn_chatseen_${mid}`, String(maxAt)); } catch {}
   }, [uid, mid]);
 
   useEffect(() => {

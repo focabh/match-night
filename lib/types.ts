@@ -48,6 +48,7 @@ export type MatchRow = {
   profile_prompt?: string | null;
   last_message?: string | null;
   last_at?: string | null;
+  last_from_me?: boolean | null;
 };
 
 export type Message = { id: number; mine: boolean; kind: 'text' | 'here' | 'wave' | 'meet'; body: string | null; created_at: string };

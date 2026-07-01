@@ -10,6 +10,7 @@ import { GENDER_OPTS, PREF_OPTS, PREF_ALL, normalizePrefs, expandPrefs, type Dec
 import { ProfileCard } from '@/components/ProfileCard';
 import { EventTabs } from '@/components/EventTabs';
 import { EventEnded, EmptyDeck, LeftEvent } from '@/components/States';
+import { notifSupported, notifOn, enableNotif, disableNotif, fireNotif } from '@/lib/notify';
 
 type Undo = { target: string; prevI: number; isSuper: boolean; label: string };
 type MatchInfo = { who: DeckPerson; matchId?: string; isSuper?: boolean };
@@ -30,7 +31,13 @@ export default function Deck() {
   const [undo, setUndo] = useState<Undo | null>(null);
   const [photoPrompt, setPhotoPrompt] = useState<null | { name: string }>(null);
   const [openProfile, setOpenProfile] = useState<DeckPerson | null>(null);
+  const [unread, setUnread] = useState(0);
+  const [toast, setToast] = useState<string | null>(null);
+  const [notif, setNotif] = useState(false);
   const undoTimer = useRef<any>(null);
+  const toastTimer = useRef<any>(null);
+  const seenRef = useRef<Record<string, number> | null>(null);
+  const celebrated = useRef<Set<string>>(new Set());
   const once = useRef<Record<string, boolean>>({});
 
   const x = useMotionValue(0);
@@ -57,6 +64,48 @@ export default function Deck() {
 
   function track(step: string, meta?: Record<string, unknown>) { if (ev) api.track(ev.event_id, uid, step, undefined, meta); }
 
+  // notificações: badge de não-lidas + toast/OS-notif de novo match e nova mensagem.
+  // Comparações SÓ com tempo do servidor (last_at) — evita erro de relógio do cliente.
+  useEffect(() => { setNotif(notifOn()); }, []);
+  useEffect(() => {
+    if (!ev?.event_id) return;
+    let live = true;
+    async function poll() {
+      const ms = await api.matches(ev!.event_id, uid).catch(() => [] as any[]);
+      if (!live) return;
+      const key = `mn_seen_${code}`;
+      const seen: Record<string, number> = seenRef.current ?? JSON.parse(localStorage.getItem(key) || '{}');
+      const first = seenRef.current === null;
+      let un = 0; const events: string[] = [];
+      for (const m of ms) {
+        const lastAt = m.last_at ? Date.parse(m.last_at) : 0;
+        const chatSeen = Number(localStorage.getItem(`mn_chatseen_${m.match_id}`) || 0);
+        if (m.last_message && m.last_from_me === false && lastAt > chatSeen) un++;
+        const prev = seen[m.match_id];
+        if (!first) {
+          if (prev === undefined && !celebrated.current.has(m.match_id)) events.push(`💜 Deu match com ${m.display_name}!`);
+          else if (prev !== undefined && lastAt > prev && m.last_from_me === false) events.push(`💬 ${m.display_name} te mandou mensagem`);
+        }
+        seen[m.match_id] = lastAt;
+      }
+      seenRef.current = seen;
+      try { localStorage.setItem(key, JSON.stringify(seen)); } catch {}
+      setUnread(un);
+      if (events.length) {
+        setToast(events[events.length - 1]); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 5000);
+        events.forEach((e) => fireNotif('Match Night', e));
+      }
+    }
+    poll();
+    const iv = setInterval(poll, 5000);
+    return () => { live = false; clearInterval(iv); };
+  }, [ev, uid, code]);
+
+  async function toggleNotif() {
+    if (notif) { disableNotif(); setNotif(false); }
+    else { const ok = await enableNotif(); setNotif(ok); setToast(ok ? '🔔 Avisos do sistema ligados' : 'Permissão de notificação negada no navegador'); clearTimeout(toastTimer.current); toastTimer.current = setTimeout(() => setToast(null), 4000); }
+  }
+
   if (left) return <LeftEvent code={code} />;
   if (ev && (ev.ended || !ev.is_live)) return <EventEnded name={ev.name} />;
   if (!ev || people === null) return <Splash />;
@@ -76,6 +125,7 @@ export default function Deck() {
       if (action === 'superlike') setState((s) => s ? { ...s, super_likes_left: Math.max(0, s.super_likes_left - 1) } : s);
       if (r.matched) {
         setMatch({ who, matchId: r.match_id, isSuper: r.super });
+        if (r.match_id) celebrated.current.add(r.match_id); // já mostrei a celebração; não repetir no toast
         if (!once.current.match) { once.current.match = true; track('first_match'); }
         setUndo(null);
       } else {
@@ -107,9 +157,17 @@ export default function Deck() {
 
   return (
     <main className="flex min-h-[100dvh] flex-col">
-      <EventTabs code={code} active="deck" theme={t}
-        right={<button onClick={() => setShowPrefs(true)} aria-label="Alterar preferências" className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card border border-line text-sm">⚙️</button>} />
+      <EventTabs code={code} active="deck" theme={t} matchesBadge={unread}
+        right={<>
+          {notifSupported() && <button onClick={toggleNotif} aria-label="Notificações" className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-full border text-sm" style={notif ? { background: t.primary + '22', borderColor: t.primary } : { background: 'var(--card)', borderColor: 'var(--line)' }}>{notif ? '🔔' : '🔕'}</button>}
+          <button onClick={() => setShowPrefs(true)} aria-label="Alterar preferências" className="ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-full bg-card border border-line text-sm">⚙️</button>
+        </>} />
       <div className="px-5 pt-3 text-[11px] font-bold uppercase tracking-wide" style={{ color: t.primary }}>● {ev.name}</div>
+      {toast && (
+        <button onClick={() => { setToast(null); router.push(`/event/${code}/matches`); }}
+          className="fixed left-1/2 top-14 z-40 max-w-[90%] -translate-x-1/2 rounded-full border px-4 py-2.5 text-sm font-bold text-white shadow-2xl"
+          style={{ background: t.secondary, borderColor: t.primary }}>{toast}</button>
+      )}
 
       {nudge && (
         <button onClick={() => router.push(`/event/${code}/perfil`)}
