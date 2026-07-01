@@ -19,6 +19,7 @@ export default function Chat() {
   const [msgs, setMsgs] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [menu, setMenu] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [zones, setZones] = useState(find);
   const [gone, setGone] = useState(false);
   const endRef = useRef<HTMLDivElement | null>(null);
@@ -73,14 +74,16 @@ export default function Chat() {
   return (
     <main className="flex min-h-[100dvh] flex-col">
       {/* header */}
-      <header className="flex items-center gap-3 border-b border-line px-4 py-3">
+      <header className="flex items-center gap-2 border-b border-line px-4 py-3">
         <button onClick={() => router.push(`/event/${code}/matches`)} className="text-xl text-muted">←</button>
-        {other?.photo_url
-          ? <img src={other.photo_url} className="h-9 w-9 rounded-full object-cover" />
-          : <div className="grid h-9 w-9 place-items-center rounded-full bg-ink2 text-sm">{name.charAt(0)}</div>}
-        <div className="min-w-0 flex-1"><div className="truncate font-black leading-tight">{name}{other?.age ? `, ${other.age}` : ''}</div><div className="text-[11px]" style={{ color: t.primary }}>🟢 aqui agora</div></div>
-        <button onClick={() => router.push(`/event/${code}/deck`)} aria-label="Descobrir" className="h-9 w-9 grid place-items-center rounded-full bg-card border border-line text-sm">🔥</button>
-        <button onClick={() => setMenu(true)} aria-label="Opções" className="h-9 w-9 grid place-items-center rounded-full bg-card border border-line">•••</button>
+        <button onClick={() => other && setShowProfile(true)} className="flex min-w-0 flex-1 items-center gap-3 text-left">
+          {other?.photo_url
+            ? <img src={other.photo_url} className="h-9 w-9 rounded-full object-cover" />
+            : <div className="grid h-9 w-9 place-items-center rounded-full bg-ink2 text-sm">{name.charAt(0)}</div>}
+          <div className="min-w-0"><div className="truncate font-black leading-tight">{name}{other?.age ? `, ${other.age}` : ''} <span className="text-white/40">ⓘ</span></div><div className="text-[11px]" style={{ color: t.primary }}>🟢 ver perfil</div></div>
+        </button>
+        <button onClick={() => router.push(`/event/${code}/deck`)} aria-label="Descobrir" className="h-9 w-9 grid shrink-0 place-items-center rounded-full bg-card border border-line text-sm">🔥</button>
+        <button onClick={() => setMenu(true)} aria-label="Opções" className="h-9 w-9 grid shrink-0 place-items-center rounded-full bg-card border border-line">•••</button>
       </header>
 
       {/* revelação pós-match */}
@@ -136,7 +139,54 @@ export default function Chat() {
           </div>
         </div>
       )}
+
+      {showProfile && other && <MatchProfileSheet o={other} theme={t} onClose={() => setShowProfile(false)} />}
     </main>
+  );
+}
+
+// Perfil COMPLETO do match (pós-match: revela tudo — fotos, bio, redes)
+function MatchProfileSheet({ o, theme, onClose }: { o: MatchRow; theme: any; onClose: () => void }) {
+  const photos = ((o.photos && o.photos.length ? o.photos : [o.photo_url]).filter(Boolean)) as string[];
+  const [i, setI] = useState(0);
+  const cur = photos[Math.min(i, photos.length - 1)] || o.photo_url;
+  const ig = o.socials?.instagram || o.instagram;
+  const tk = o.socials?.tiktok;
+  const sp = o.socials?.spotify;
+  const spHref = sp ? (/^https?:\/\//.test(sp) ? sp : `https://open.spotify.com/search/${encodeURIComponent(sp)}`) : '';
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur sm:items-center" onClick={onClose}>
+      <div className="mx-auto w-full max-w-[420px] overflow-hidden rounded-t-3xl sm:rounded-3xl bg-ink2 border-t border-line" onClick={(e) => e.stopPropagation()}>
+        <div className="relative aspect-[4/5] w-full bg-card">
+          {cur ? <img src={cur} alt="" className="absolute inset-0 h-full w-full object-cover" />
+               : <div className="absolute inset-0 grid place-items-center text-7xl text-white" style={{ background: 'radial-gradient(120% 90% at 50% 0%,#3a2e8c,#1b1326)' }}>{(o.display_name || '🙂').charAt(0).toUpperCase()}</div>}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/20" />
+          {photos.length > 1 && (
+            <>
+              <div className="absolute inset-x-3 top-2 flex gap-1">{photos.map((_, k) => <div key={k} className="h-1 flex-1 rounded-full" style={{ background: k === i ? '#fff' : 'rgba(255,255,255,.35)' }} />)}</div>
+              <button className="absolute left-0 top-0 h-full w-1/3" onClick={() => setI((v) => Math.max(0, v - 1))} aria-label="anterior" />
+              <button className="absolute right-0 top-0 h-full w-1/3" onClick={() => setI((v) => Math.min(photos.length - 1, v + 1))} aria-label="próxima" />
+            </>
+          )}
+          <button onClick={onClose} className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-black/50 text-white backdrop-blur">✕</button>
+          <div className="absolute inset-x-0 bottom-0 p-5">
+            <div className="flex items-end gap-2"><h2 className="text-3xl font-black">{o.display_name}</h2>{o.age ? <span className="text-2xl font-bold text-white/80">{o.age}</span> : null}</div>
+            {o.night_intention && <div className="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold" style={{ background: theme.primary + '33', color: '#fff' }}>{o.night_intention}</div>}
+          </div>
+        </div>
+        <div className="p-4 space-y-3">
+          {(o.profile_prompt || o.bio) && <p className="text-white/90">{o.profile_prompt || o.bio}</p>}
+          {(ig || tk || sp) && (
+            <div className="flex flex-wrap gap-1.5">
+              {ig && <a target="_blank" href={`https://instagram.com/${String(ig).replace('@', '')}`} className="rounded-full bg-glow/15 px-3 py-1.5 text-xs font-bold text-glow">📸 {String(ig).startsWith('@') ? ig : '@' + ig}</a>}
+              {tk && <a target="_blank" href={`https://tiktok.com/@${tk.replace('@', '')}`} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold text-white">🎵 @{tk.replace('@', '')}</a>}
+              {sp && <a target="_blank" href={spHref} className="rounded-full bg-[#1db954]/20 px-3 py-1.5 text-xs font-bold text-[#1db954]">🎧 Spotify</a>}
+            </div>
+          )}
+          <button onClick={onClose} className="btn w-full py-3 font-bold text-white" style={{ background: theme.button }}>Voltar pra conversa</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
