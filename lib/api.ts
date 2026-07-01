@@ -55,6 +55,9 @@ export const api = {
   myState: (eventId: string, userId: string) =>
     rpc<{ super_likes_left: number; has_photo: boolean; active: number }>('mn_my_state', { p_event_id: eventId, p_user_id: userId }),
 
+  myProfile: (eventId: string, userId: string) =>
+    rpc<any>('mn_my_profile', { p_event_id: eventId, p_user_id: userId }),
+
   matches: (eventId: string, userId: string) =>
     rpc<MatchRow[]>('mn_matches_list', { p_event_id: eventId, p_user_id: userId }),
 

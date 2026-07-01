@@ -23,7 +23,23 @@ export default function Perfil() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
 
-  useEffect(() => { api.eventByCode(code).then(setEv).catch(() => {}); }, [code]);
+  useEffect(() => {
+    api.eventByCode(code).then((e) => {
+      setEv(e);
+      if (e?.event_id) api.myProfile(e.event_id, getUserId()).then((mp) => {
+        if (!mp) return;
+        if (Array.isArray(mp.photos) && mp.photos.length) setPhotos(mp.photos);
+        if (mp.display_name) setName(mp.display_name);
+        if (mp.birthdate) setBirth(String(mp.birthdate).slice(0, 10));
+        if (mp.prompt) setPrompt(mp.prompt);
+        if (mp.intention) setIntention(mp.intention);
+        const s = mp.socials || {};
+        if (s.instagram) setIg(String(s.instagram).replace(/^@/, ''));
+        if (s.tiktok) setTk(String(s.tiktok).replace(/^@/, ''));
+        if (s.spotify) setSp(s.spotify);
+      }).catch(() => {});
+    }).catch(() => {});
+  }, [code]);
   if (ev && (ev.ended || !ev.is_live)) return <EventEnded name={ev.name} />;
   const t = themeOf(ev);
 
